@@ -2,5 +2,15 @@
   "name": "@scout/contracts",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./schemas/requirement_spec.json": "./src/schemas/requirement_spec.json",
+    "./schemas/quote.json": "./src/schemas/quote.json",
+    "./schemas/call_outcome.json": "./src/schemas/call_outcome.json"
+  },
+  "scripts": {
+    "test": "node src/effective_cost.js && node src/red_flag.js"
+  }
 }

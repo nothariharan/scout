@@ -2,5 +2,10 @@
   "name": "@scout/vertical-config",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./config": "./src/vertical.config.json"
+  }
 }

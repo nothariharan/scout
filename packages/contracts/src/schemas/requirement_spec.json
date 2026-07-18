@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@scout/contracts/requirement_spec.json",
+  "title": "RequirementSpec",
+  "description": "FROZEN CONTRACT. Single source of truth produced by the intake interview. The Voice/Intake agent fills this; every downstream consumer (orchestrator, web, evals) reads it. Do not rename fields without telling the whole team.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "deal_type",
+    "location",
+    "budget",
+    "negotiation_posture",
+    "occupancy",
+    "furnishing",
+    "move_in_date",
+    "lease_duration_months"
+  ],
+  "properties": {
+    "deal_type": {
+      "description": "Which rental product the user wants.",
+      "type": "string",
+      "enum": ["pg", "short_stay_rental"]
+    },
+    "location": {
+      "description": "Where the user wants to live.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["area", "city"],
+      "properties": {
+        "area": { "type": "string", "description": "Neighbourhood / locality, e.g. 'Koramangala'." },
+        "city": { "type": "string", "description": "City, e.g. 'Bengaluru'." },
+        "pincode": { "type": "string", "description": "Postal PIN code." },
+        "lat": { "type": "number", "description": "Latitude of the target area." },
+        "lng": { "type": "number", "description": "Longitude of the target area." }
+      }
+    },
+    "commute_constraint": {
+      "description": "Optional. Anchor point (office/college) and the max acceptable commute.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_point_lat", "reference_point_lng", "max_minutes"],
+      "properties": {
+        "reference_point_lat": { "type": "number" },
+        "reference_point_lng": { "type": "number" },
+        "max_minutes": { "type": "integer", "minimum": 0, "description": "Maximum one-way commute in minutes." }
+      }
+    },
+    "budget": {
+      "description": "Monthly budget envelope the negotiator works within.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ideal", "ceiling", "currency"],
+      "properties": {
+        "ideal": { "type": "number", "minimum": 0, "description": "Target effective monthly cost the user is happy with." },
+        "ceiling": { "type": "number", "minimum": 0, "description": "Absolute walk-away effective monthly cost." },
+        "currency": { "type": "string", "description": "ISO 4217 code, e.g. 'INR'." }
+      }
+    },
+    "negotiation_posture": {
+      "description": "How hard/fast the agent should negotiate.",
+      "type": "string",
+      "enum": ["aggressive", "balanced", "fast"]
+    },
+    "occupancy": {
+      "description": "Number of people who will occupy the unit.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "furnishing": {
+      "description": "Required furnishing level.",
+      "type": "string",
+      "enum": ["unfurnished", "semi", "furnished"]
+    },
+    "amenities": {
+      "description": "Desired amenities. Constrained to the known vocabulary.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["wifi", "food_included", "parking", "gym", "security", "ac"]
+      },
+      "uniqueItems": true
+    },
+    "move_in_date": {
+      "description": "Desired move-in date (ISO 8601 date).",
+      "type": "string",
+      "format": "date"
+    },
+    "lease_duration_months": {
+      "description": "Intended lease length in months. Used to amortize one-time fees into effective monthly cost.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "deal_breakers": {
+      "description": "Free-text hard constraints, e.g. 'no ground floor', 'must allow cooking'.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "doc_readiness": {
+      "description": "Which documents the user already has ready (affects how fast a deal can close).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id_proof", "income_proof", "company_letter"],
+      "properties": {
+        "id_proof": { "type": "boolean" },
+        "income_proof": { "type": "boolean" },
+        "company_letter": { "type": "boolean" }
+      }
+    },
+    "language_pref": {
+      "description": "Preferred language for the call/UI (ISO 639-1).",
+      "type": "string",
+      "default": "en"
+    }
+  }
+}

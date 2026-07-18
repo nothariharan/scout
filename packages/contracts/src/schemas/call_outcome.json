@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@scout/contracts/call_outcome.json",
+  "title": "CallOutcome",
+  "description": "FROZEN CONTRACT. Every call MUST terminate as exactly one of these terminal states. Referenced by quote.json. TEAM DECISION PENDING: packages/contracts/README.md lists a 4th status 'error'; this Phase 0 draft ships the 3 product endings (itemized_quote | callback_scheduled | declined). Resolve before final freeze. Do not add a status without telling the whole team.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status"],
+  "properties": {
+    "status": {
+      "description": "The single terminal state of the call.",
+      "type": "string",
+      "enum": ["itemized_quote", "callback_scheduled", "declined"]
+    },
+    "reason": {
+      "description": "Required for 'callback_scheduled' (why/when) and 'declined' (why). Omitted/empty for 'itemized_quote'.",
+      "type": "string"
+    },
+    "callback_at": {
+      "description": "Optional ISO 8601 timestamp for a scheduled callback.",
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "callback_scheduled" } } },
+      "then": { "required": ["reason"] }
+    },
+    {
+      "if": { "properties": { "status": { "const": "declined" } } },
+      "then": { "required": ["reason"] }
+    }
+  ]
+}

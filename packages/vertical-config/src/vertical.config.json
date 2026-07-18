@@ -1,0 +1,36 @@
+{
+  "_comment": "SWAPPABLE VERTICAL CONFIG. This is the ONLY file you edit to switch Scout to a new vertical (e.g. moving/packers, car rentals). Change these values, keep the @scout/contracts schemas and scoring functions untouched, and the whole pipeline retargets. Field NAMES here are a contract - do not rename them, only change their values.",
+
+  "vertical_name": "real_estate_pg",
+  "currency": "INR",
+
+  "effective_cost_formula": {
+    "_comment": "Which quote fields feed effectiveMonthlyCost(). One-time fields are amortized over lease_duration_months; monthly fields are added as-is.",
+    "monthly_fields": ["base_rent", "maintenance_monthly", "hidden_charges"],
+    "amortized_onetime_fields": ["deposit", "brokerage_onetime"]
+  },
+
+  "red_flag_threshold_percent": 30,
+
+  "fraud_rules": [
+    {
+      "id": "pre_visit_deposit",
+      "trigger_keywords": ["deposit before visit", "pay to hold", "token amount", "advance to lock", "transfer now", "gpay the deposit"],
+      "action": "flag_high_risk"
+    },
+    {
+      "id": "no_agreement",
+      "trigger_keywords": ["no rent agreement", "cash only", "off the books", "no paperwork"],
+      "action": "flag_high_risk"
+    },
+    {
+      "id": "refuses_visit",
+      "trigger_keywords": ["cannot show now", "out of town owner", "caretaker has keys", "no physical visit"],
+      "action": "flag_caution"
+    }
+  ],
+
+  "leverage_types": ["comparable_unit", "benchmark", "fee_attack"],
+  "benchmark_source": "tavily",
+  "seller_personas": ["scammer_deposit", "fee_padder_caves", "stonewaller"]
+}

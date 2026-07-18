@@ -1,0 +1,33 @@
+{
+  "deal_type": "pg",
+  "location": {
+    "area": "Koramangala",
+    "city": "Bengaluru",
+    "pincode": "560034",
+    "lat": 12.9352,
+    "lng": 77.6245
+  },
+  "commute_constraint": {
+    "reference_point_lat": 12.9698,
+    "reference_point_lng": 77.6499,
+    "max_minutes": 40
+  },
+  "budget": {
+    "ideal": 13000,
+    "ceiling": 16000,
+    "currency": "INR"
+  },
+  "negotiation_posture": "balanced",
+  "occupancy": 1,
+  "furnishing": "semi",
+  "amenities": ["wifi", "food_included", "security"],
+  "move_in_date": "2026-08-01",
+  "lease_duration_months": 12,
+  "deal_breakers": ["no triple sharing", "must allow late entry"],
+  "doc_readiness": {
+    "id_proof": true,
+    "income_proof": true,
+    "company_letter": false
+  },
+  "language_pref": "en"
+}

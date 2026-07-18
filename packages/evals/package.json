@@ -2,5 +2,8 @@
   "name": "@scout/evals",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "test": "node src/phase0.check.js"
+  }
 }

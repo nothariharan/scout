@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@scout/contracts/quote.json",
+  "title": "Quote",
+  "description": "FROZEN CONTRACT. One normalized quote extracted from ONE call. The Voice agent emits it, the orchestrator ranks it, the web app renders it. Money fields are in the vertical currency (see @scout/vertical-config). Do not rename fields without telling the whole team.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "listing_id",
+    "base_rent",
+    "deposit",
+    "maintenance_monthly",
+    "brokerage_onetime",
+    "hidden_charges",
+    "lease_duration_months",
+    "effective_monthly_cost",
+    "risk_flag",
+    "call_outcome"
+  ],
+  "properties": {
+    "listing_id": { "type": "string", "description": "Stable unique id for the listing." },
+    "listing_name": { "type": "string", "description": "Human-readable listing/property name." },
+    "seller_language": { "type": "string", "description": "Language the seller spoke (ISO 639-1 or free text)." },
+
+    "base_rent": { "type": "number", "minimum": 0, "description": "Monthly rent, excluding all other charges." },
+    "deposit": { "type": "number", "minimum": 0, "description": "One-time refundable security deposit." },
+    "maintenance_monthly": { "type": "number", "minimum": 0, "description": "Recurring monthly maintenance charge." },
+    "brokerage_onetime": { "type": "number", "minimum": 0, "description": "One-time broker fee." },
+    "hidden_charges": { "type": "number", "minimum": 0, "description": "Any extra recurring monthly charge surfaced during the call (electricity padding, 'convenience' fees, etc.)." },
+
+    "lease_duration_months": { "type": "integer", "minimum": 1, "description": "Lease length used to amortize one-time fees." },
+    "amenities_included": {
+      "description": "Amenities the seller confirmed are included. Same vocabulary as requirement_spec amenities.",
+      "type": "array",
+      "items": { "type": "string", "enum": ["wifi", "food_included", "parking", "gym", "security", "ac"] },
+      "uniqueItems": true
+    },
+
+    "effective_monthly_cost": {
+      "type": "number",
+      "minimum": 0,
+      "description": "COMPUTED. Output of effectiveMonthlyCost() in this package. The single number used to rank quotes."
+    },
+    "first_quoted_effective": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Effective monthly cost as first quoted (for price-drop capture)."
+    },
+    "final_quoted_effective": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Effective monthly cost after negotiation (for price-drop capture)."
+    },
+    "price_moved": {
+      "type": "boolean",
+      "description": "True if final_quoted_effective < first_quoted_effective (seller conceded)."
+    },
+
+    "risk_flag": {
+      "type": "string",
+      "enum": ["verified", "caution", "high_risk"],
+      "description": "COMPUTED. Output of riskFlag() in this package."
+    },
+    "fraud_signals": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Fraud rule ids / phrases detected on the call (see @scout/vertical-config fraud_rules)."
+    },
+    "commute_minutes": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Estimated one-way commute from the listing to the requirement's reference point."
+    },
+
+    "call_outcome": {
+      "description": "How the call ended. See call_outcome.json.",
+      "$ref": "call_outcome.json"
+    },
+
+    "transcript_url": { "type": "string", "description": "Link to the full call transcript." },
+    "recording_url": { "type": "string", "description": "Link to the call audio recording." }
+  }
+}
