@@ -1,0 +1,7 @@
+{
+  "name": "scout",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Scout: an evidence-backed voice negotiation assistant for real-estate searches.",
+  "packageManager": "pnpm@10.0.0"
+}

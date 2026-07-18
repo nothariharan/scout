@@ -1,0 +1,22 @@
+# Dependencies and generated builds
+node_modules/
+.pnpm-store/
+dist/
+.next/
+coverage/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local run data and temporary inspection files
+tmp/
+data/local/
+recordings/
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+
