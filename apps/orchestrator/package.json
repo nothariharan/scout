@@ -6,7 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "demo": "node src/demo.smoke.js",
-    "test": "node src/demo.smoke.js"
+    "test": "node src/demo.smoke.js",
+    "serve": "node src/server/start.js"
   },
   "dependencies": {
     "@scout/contracts": "workspace:*",

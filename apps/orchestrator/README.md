@@ -43,3 +43,39 @@ demo money-shots (deposit scam -> HIGH RISK, fee-padder -> price drop).
 
 Without keys, both fall back so the pipeline stays runnable for the demo.
 
+---
+
+## Mid-call tool API (the ~40% integration checkpoint)
+
+The integration surface Person A's ElevenLabs agent tools and Person C's UI hit.
+Framework-free `node:http`, so it runs with no install.
+
+```bash
+node apps/orchestrator/src/server/start.js      # boot on :8787 (PORT overrides)
+node apps/orchestrator/src/server/api.smoke.js  # self-test the full flow, no keys
+```
+
+| Method / path | Who calls it | Purpose |
+| --- | --- | --- |
+| `GET /health` | infra | liveness |
+| `POST /calls` | orchestrator / Person A | start a call session for a candidate |
+| `POST /calls/:id/quote` | **ElevenLabs agent tool** | write structured fields *during* the call |
+| `GET /calls/:id/leverage` | **ElevenLabs Negotiator tool** | real leverage to cite (never invented) |
+| `POST /calls/:id/outcome` | Person A | close as itemized_quote / callback_scheduled / declined |
+| `GET /report` | Person C (UI) | ranked comparison + recommendation |
+
+**Honesty constraint enforced in code:** `GET /calls/:id/leverage` only returns
+numbers from confirmed itemized, non-fraud quotes in the store plus the real
+benchmark — the agent can never be handed an invented competing bid.
+
+## Discovery + telephony (boundary with Person A)
+
+| Path | Challenge resource | Status |
+| --- | --- | --- |
+| `src/discovery/places-client.js` | Google Places call-list + commute geofence | stub w/ env key |
+| `src/telephony/twilio-client.js` | Twilio/SIP dial-out + batch calling | stub; bridges to ElevenLabs agent |
+
+The orchestrator triggers the batch and owns call state; the ElevenLabs agent
+owns the audio. Twilio call SIDs map to `call-session` ids so mid-call tool
+writes land in the right session.
+
