@@ -14,14 +14,14 @@ All modules are wired to `@scout/contracts` + `@scout/vertical-config`.
 | --- | --- | --- |
 | `src/normalize/normalize-quote.js` | Effective-cost normalizer | wraps `effectiveMonthlyCost()` |
 | `src/store/quotes-store.js` | Confirmed-quotes store (real leverage only) | in-memory, done |
-| `src/benchmark/tavily-client.js` | Tavily area rent data | stub w/ env key + graceful fallback |
-| `src/benchmark/benchmark-service.js` | Area price benchmark (cached) | TTL cache done; price parsing TODO |
+| `src/benchmark/tavily-client.js` | Tavily area rent data | real Tavily call (include_answer); fallback keyless |
+| `src/benchmark/benchmark-service.js` | Area price benchmark (cached) | TTL cache + median price parsing done |
 | `src/leverage/leverage-builder.js` | 3 leverage types | done (comparable / benchmark / fee_attack) |
 | `src/negotiation/price-drop.js` | Price-drop capture (money-shot) | done |
 | `src/risk/fraud-signals.js` | Pre-visit-deposit fraud signal | done (config-driven keywords) |
 | `src/risk/risk-service.js` | Red-flag 30%-below-benchmark | wraps `riskFlag()` |
-| `src/transcripts/parse-transcript.js` | OpenAI transcript -> fields | fallback parser; OpenAI call TODO |
-| `src/transcripts/recommend.js` | Plain-language recommendation | template; OpenAI call TODO |
+| `src/transcripts/parse-transcript.js` | OpenAI transcript -> fields | real Structured Outputs call; regex fallback keyless |
+| `src/transcripts/recommend.js` | Plain-language recommendation | real OpenAI narrative + template fallback |
 | `src/ranking/rank-quotes.js` | Ranked shortlist (high_risk never #1) | done |
 | `src/outcomes/call-outcome.js` | 3 structured outcomes | done |
 | `src/pipeline.js` | End-to-end wiring | done |
@@ -41,7 +41,9 @@ demo money-shots (deposit scam -> HIGH RISK, fee-padder -> price drop).
 - `TAVILY_API_KEY` → real benchmark in `benchmark/`
 - `OPENAI_API_KEY` → real transcript parsing + recommendation in `transcripts/`
 
-Without keys, both fall back so the pipeline stays runnable for the demo.
+Without keys, all three fall back so the pipeline stays runnable for the demo.
+API shapes are grounded in the official docs (Tavily search, OpenAI Structured
+Outputs). See `docs/AGENT-TOOLS.md` for the ElevenLabs ↔ backend tool contract.
 
 ---
 

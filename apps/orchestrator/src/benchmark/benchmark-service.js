@@ -45,7 +45,7 @@ export function createBenchmarkService({
  */
 function summarize(raw, location, fallbackByPincode) {
   const fallback = fallbackByPincode[location.pincode] ?? null;
-  const parsed = raw.available ? parsePrices(raw.results) : null;
+  const parsed = raw.available ? parseBenchmark(raw) : null;
   const effective = parsed ?? fallback;
 
   return {
@@ -56,10 +56,29 @@ function summarize(raw, location, fallbackByPincode) {
   };
 }
 
-/**
- * TODO(person-b): extract numeric monthly prices from Tavily result snippets and
- * return their median. Returns null until implemented.
- */
-function parsePrices(_results) {
-  return null;
+/** Parse a median monthly price from Tavily's synthesized answer + result text. */
+function parseBenchmark(raw) {
+  const text = [raw.answer, ...(raw.results ?? []).map((r) => r.content ?? '')].join(' ');
+  const prices = extractMonthlyPrices(text);
+  return prices.length > 0 ? median(prices) : null;
+}
+
+// Pull plausible monthly rent figures: currency-prefixed (₹/Rs/INR 12,000) or
+// suffixed (12000 per month). Filter to a sane rent band to drop stray numbers.
+function extractMonthlyPrices(text) {
+  const prices = [];
+  const re = /(?:₹|rs\.?|inr)\s*([0-9][0-9,]{2,})|([0-9][0-9,]{3,})\s*(?:per month|\/month|monthly|p\.?m\.?)/gi;
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    const digits = (match[1] ?? match[2] ?? '').replace(/,/g, '');
+    const value = Number(digits);
+    if (Number.isFinite(value) && value >= 3000 && value <= 200000) prices.push(value);
+  }
+  return prices;
+}
+
+function median(nums) {
+  const sorted = [...nums].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : Math.round(((sorted[mid - 1] + sorted[mid]) / 2) * 100) / 100;
 }
