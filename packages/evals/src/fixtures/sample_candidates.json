@@ -1,0 +1,44 @@
+[
+  {
+    "listing_id": "pg_kor_001",
+    "listing_name": "Zolo Nest PG, 5th Block Koramangala",
+    "source": "google_places",
+    "deal_type": "pg",
+    "phone": "+91-90000-00001",
+    "area": "Koramangala",
+    "lat": 12.9345,
+    "lng": 77.6265,
+    "distance_km": 0.4,
+    "commute_minutes": 32,
+    "advertised_rent": 12000,
+    "listing_url": "https://scout.demo/listings/pg_kor_001"
+  },
+  {
+    "listing_id": "pg_kor_002",
+    "listing_name": "Comfort Stay PG, 6th Block Koramangala",
+    "source": "nobroker",
+    "deal_type": "pg",
+    "phone": "+91-90000-00002",
+    "area": "Koramangala",
+    "lat": 12.9372,
+    "lng": 77.6218,
+    "distance_km": 0.7,
+    "commute_minutes": 28,
+    "advertised_rent": 11000,
+    "listing_url": "https://scout.demo/listings/pg_kor_002"
+  },
+  {
+    "listing_id": "pg_kor_003",
+    "listing_name": "Sunrise Luxury PG (unverified)",
+    "source": "magicbricks",
+    "deal_type": "pg",
+    "phone": "+91-90000-00003",
+    "area": "Koramangala",
+    "lat": 12.9331,
+    "lng": 77.6290,
+    "distance_km": 0.9,
+    "commute_minutes": 30,
+    "advertised_rent": 6000,
+    "listing_url": "https://scout.demo/listings/pg_kor_003"
+  }
+]

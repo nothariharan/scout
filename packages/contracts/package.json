@@ -4,13 +4,27 @@
   "private": true,
   "type": "module",
   "main": "src/index.js",
+  "types": "generated.d.ts",
   "exports": {
-    ".": "./src/index.js",
+    ".": {
+      "types": "./generated.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./generated.d.ts",
+      "default": "./generated.d.ts"
+    },
     "./schemas/requirement_spec.json": "./src/schemas/requirement_spec.json",
     "./schemas/quote.json": "./src/schemas/quote.json",
-    "./schemas/call_outcome.json": "./src/schemas/call_outcome.json"
+    "./schemas/call_outcome.json": "./src/schemas/call_outcome.json",
+    "./schemas/candidate_listing.json": "./src/schemas/candidate_listing.json",
+    "./schemas/recommendation.json": "./src/schemas/recommendation.json"
   },
   "scripts": {
-    "test": "node src/effective_cost.js && node src/red_flag.js"
+    "test": "node src/effective_cost.js && node src/red_flag.js",
+    "generate:types": "node scripts/generate-types.mjs"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^15.0.3"
   }
 }

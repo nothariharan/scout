@@ -1,0 +1,233 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #16233d;
+  --paper: #f3eee4;
+  --paper-2: #eae2d2;
+  --rust: #b0451f;
+  --sage: #4f6b4c;
+  --sage-bg: #e4ebe0;
+  --amber: #b4791f;
+  --amber-bg: #f3e6c9;
+  --charcoal: #2b2b28;
+  --line: #d8cfbb;
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--paper);
+    color: var(--charcoal);
+  }
+  body {
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Fraunces", Georgia, serif;
+    color: var(--ink);
+    font-weight: 600;
+  }
+}
+
+@layer components {
+  /* Constrained case-file column. */
+  .wrap {
+    max-width: 980px;
+    margin-inline: auto;
+    padding-inline: 20px;
+  }
+
+  /* Thin repeating dashed divider — the "case file" seam. */
+  .wire {
+    height: 1px;
+    border: 0;
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--line) 0,
+      var(--line) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+  }
+
+  /* Numbered stage tab. */
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    opacity: 0.55;
+    border-bottom: 2px solid transparent;
+    transition: opacity 0.15s ease;
+  }
+  .tab:hover {
+    opacity: 0.85;
+  }
+  .tab[data-active="true"] {
+    opacity: 1;
+    border-bottom-color: var(--rust);
+  }
+  .tab .num {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .tab[data-active="true"] .num {
+    border-color: var(--rust);
+    color: var(--rust);
+  }
+
+  /* Buttons. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--rust);
+    color: #fff;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--rust);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -8px rgba(176, 69, 31, 0.7);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--ink);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--ink);
+    transition: background 0.12s ease;
+  }
+  .btn-ghost:hover {
+    background: var(--paper-2);
+  }
+
+  /* Cards — flat, ruled, no float. */
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+
+  /* Mono status pills. */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .pill-sage {
+    background: var(--sage-bg);
+    color: var(--sage);
+    border-color: transparent;
+  }
+  .pill-amber {
+    background: var(--amber-bg);
+    color: var(--amber);
+    border-color: transparent;
+  }
+  .pill-rust {
+    background: #f4ddd3;
+    color: var(--rust);
+    border-color: transparent;
+  }
+
+  /* Large Fraunces numeral for ledger rows. */
+  .call-idx {
+    font-family: "Fraunces", serif;
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--line);
+  }
+
+  /* Rubber-stamp recommendation badge. */
+  .rec-stamp {
+    display: inline-block;
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rust);
+    border: 2px solid var(--rust);
+    border-radius: 6px;
+    padding: 6px 12px;
+    transform: rotate(-4deg);
+    opacity: 0.9;
+  }
+
+  .mono {
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .serif {
+    font-family: "Fraunces", serif;
+  }
+}
+
+/* Live-state pulse (not a spinner). */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+.pulse {
+  animation: pulse 1.15s ease-in-out infinite;
+}
+
+.scroll-quiet::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-quiet::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+.scroll-quiet::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -1,0 +1,15 @@
+{
+  "requirement_spec_id": "req_demo_koramangala_pg",
+  "ranked_listing_ids": ["pg_kor_002", "pg_kor_001", "pg_kor_003"],
+  "top_pick": {
+    "listing_id": "pg_kor_002",
+    "reasoning": "Comfort Stay is the best verified value at an effective 13,500/mo, inside the 16,000 ceiling and close to the 13,000 ideal. It is the only call where the price actually moved: the owner opened at an effective 14,833/mo and conceded to 13,500/mo after Scout cited a comparable verified quote. Zolo Nest is verified but 2,000/mo more expensive. Sunrise Luxury quotes the lowest headline rent but is flagged high_risk (demanded the full deposit over GPay before any visit), so it is ranked last despite the price.",
+    "evidence_refs": [
+      { "listing_id": "pg_kor_002", "line_index": 14, "quote_field": "first_quoted_effective" },
+      { "listing_id": "pg_kor_002", "line_index": 27, "quote_field": "price_moved" },
+      { "listing_id": "pg_kor_002", "line_index": 28, "quote_field": "final_quoted_effective" },
+      { "listing_id": "pg_kor_003", "line_index": 9, "quote_field": "fraud_signals" }
+    ]
+  },
+  "generated_at": "2026-07-19T09:00:00.000Z"
+}
