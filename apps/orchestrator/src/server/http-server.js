@@ -341,7 +341,7 @@ function callMetadata({ callId, request = {}, strategy = {} }) {
       deal_type: request.deal_type ?? '', location, occupancy: request.occupancy ?? '', furnishing: request.furnishing ?? '',
       amenities: request.amenities ?? [], move_in_date: request.move_in_date ?? '', lease_duration_months: request.lease_duration_months ?? '',
       deal_breakers: request.deal_breakers ?? [], ideal_budget: request.budget?.ideal ?? '', hard_ceiling: request.budget?.ceiling ?? '',
-      currency: request.budget?.currency ?? 'INR', language_pref: request.language_pref ?? 'en',
+      currency: request.budget?.currency ?? 'INR', language_pref: request.language_pref ?? 'en', customer_name: request.customer_name ?? 'a customer',
     };
     return {
       call_id: callId,
@@ -349,6 +349,7 @@ function callMetadata({ callId, request = {}, strategy = {} }) {
       location, deal_type: String(propertyScope.deal_type), furnishing: String(propertyScope.furnishing),
       occupancy: String(propertyScope.occupancy), move_in_date: String(propertyScope.move_in_date), lease_duration_months: String(propertyScope.lease_duration_months),
       budget_ideal: String(propertyScope.ideal_budget), budget_ceiling: String(propertyScope.hard_ceiling), currency: String(propertyScope.currency),
+      customer_name: String(propertyScope.customer_name), language_pref: String(propertyScope.language_pref),
       strategy_brief: strategy.next_action?.verbalization_brief ?? strategy.next_action?.verbalization ?? 'Collect an itemized rental quote without pressure.',
       verified_leverage: JSON.stringify(strategy.verified_leverage ?? []),
     };
