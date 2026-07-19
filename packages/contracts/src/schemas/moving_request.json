@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@scout/contracts/moving_request.json",
+  "title": "MovingRequest",
+  "description": "Confirmed, reusable request for Scout's moving-company pilot.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vertical", "origin", "destination", "move_date", "home_size", "budget", "negotiation_posture"],
+  "properties": {
+    "vertical": { "const": "moving" },
+    "origin": { "$ref": "#/definitions/address" },
+    "destination": { "$ref": "#/definitions/address" },
+    "move_date": { "type": "string", "format": "date" },
+    "home_size": { "type": "string", "enum": ["studio", "1_bed", "2_bed", "3_bed_plus", "custom"] },
+    "inventory_notes": { "type": "string" },
+    "stairs": { "type": "object", "additionalProperties": false, "properties": { "origin_floors": { "type": "integer", "minimum": 0 }, "destination_floors": { "type": "integer", "minimum": 0 }, "elevator_origin": { "type": "boolean" }, "elevator_destination": { "type": "boolean" } } },
+    "services": { "type": "object", "additionalProperties": false, "properties": { "packing": { "type": "boolean" }, "unpacking": { "type": "boolean" }, "insurance": { "type": "boolean" }, "storage": { "type": "boolean" } } },
+    "budget": { "type": "object", "additionalProperties": false, "required": ["ideal", "ceiling", "currency"], "properties": { "ideal": { "type": "number", "minimum": 0 }, "ceiling": { "type": "number", "minimum": 0 }, "currency": { "type": "string" } } },
+    "negotiation_posture": { "type": "string", "enum": ["aggressive", "balanced", "fast"] },
+    "language_pref": { "type": "string", "default": "en" }
+  },
+  "definitions": {
+    "address": { "type": "object", "additionalProperties": false, "required": ["area", "city"], "properties": { "area": { "type": "string" }, "city": { "type": "string" }, "pincode": { "type": "string" }, "lat": { "type": "number" }, "lng": { "type": "number" } } }
+  }
+}

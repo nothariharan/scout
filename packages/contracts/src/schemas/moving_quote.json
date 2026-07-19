@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@scout/contracts/moving_quote.json",
+  "title": "MovingQuote",
+  "description": "Comparable all-in moving quote captured from one vendor call.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vendor_id", "vendor_name", "base_price", "binding_total", "quote_status", "risk_flag"],
+  "properties": {
+    "vendor_id": { "type": "string" },
+    "vendor_name": { "type": "string" },
+    "base_price": { "type": "number", "minimum": 0 },
+    "packing": { "type": "number", "minimum": 0 },
+    "unpacking": { "type": "number", "minimum": 0 },
+    "stairs": { "type": "number", "minimum": 0 },
+    "long_carry": { "type": "number", "minimum": 0 },
+    "fuel": { "type": "number", "minimum": 0 },
+    "insurance": { "type": "number", "minimum": 0 },
+    "storage": { "type": "number", "minimum": 0 },
+    "other_fees": { "type": "number", "minimum": 0 },
+    "binding_total": { "type": "number", "minimum": 0 },
+    "first_quoted_total": { "type": "number", "minimum": 0 },
+    "price_moved": { "type": "boolean" },
+    "quote_status": { "type": "string", "enum": ["binding", "non_binding", "estimate_only", "declined"] },
+    "risk_flag": { "type": "string", "enum": ["verified", "caution", "high_risk"] },
+    "risk_signals": { "type": "array", "items": { "type": "string" } },
+    "call_outcome": { "type": "string", "enum": ["itemized_quote", "callback_scheduled", "declined", "declined_for_risk"] },
+    "transcript_url": { "type": "string" },
+    "recording_url": { "type": "string" }
+  }
+}

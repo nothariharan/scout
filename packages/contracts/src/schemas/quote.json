@@ -74,7 +74,14 @@
 
     "call_outcome": {
       "description": "How the call ended. See call_outcome.json.",
-      "$ref": "call_outcome.json"
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["itemized_quote", "callback_scheduled", "declined"] },
+        "reason": { "type": "string" },
+        "callback_at": { "type": "string", "format": "date-time" }
+      }
     },
 
     "transcript_url": { "type": "string", "description": "Link to the full call transcript." },

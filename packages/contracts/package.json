@@ -18,7 +18,9 @@
     "./schemas/quote.json": "./src/schemas/quote.json",
     "./schemas/call_outcome.json": "./src/schemas/call_outcome.json",
     "./schemas/candidate_listing.json": "./src/schemas/candidate_listing.json",
-    "./schemas/recommendation.json": "./src/schemas/recommendation.json"
+    "./schemas/recommendation.json": "./src/schemas/recommendation.json",
+    "./schemas/moving_request.json": "./src/schemas/moving_request.json",
+    "./schemas/moving_quote.json": "./src/schemas/moving_quote.json"
   },
   "scripts": {
     "test": "node src/effective_cost.js && node src/red_flag.js",

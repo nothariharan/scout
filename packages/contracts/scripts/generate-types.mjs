@@ -43,5 +43,11 @@ for (const file of files) {
   out += '\n';
 }
 
+// Shared UI aliases are derived from the enum values that appear in schemas.
+// Keeping them here means regeneration never silently removes public type names.
+out += "export type RiskFlag = 'verified' | 'caution' | 'high_risk';\n";
+out += "export type CallStatus = CallOutcome['status'];\n";
+out += "export type EvidenceRef = Recommendation['top_pick']['evidence_refs'][number];\n";
+
 await writeFile(outFile, out, 'utf8');
 console.log(`generate-types.mjs: wrote ${outFile} from ${files.length} schemas`);
