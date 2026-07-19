@@ -53,7 +53,7 @@ async function proxy(request: NextRequest, { params }: Context) {
     });
   } catch {
     return Response.json(
-      { error: "Orchestrator is unavailable. Start @scout/orchestrator or use the demo replay." },
+      { error: "Orchestrator is unavailable. Start @scout/orchestrator and retry." },
       { status: 503 }
     );
   }

@@ -2,7 +2,7 @@
 
 ## The product in one sentence
 
-Scout is an autonomous, transparent real-estate negotiation assistant: it gathers a complete housing requirement once, calls candidate listings in parallel, captures comparable terms, negotiates honestly with verified leverage, flags risk, and recommends a shortlist backed by call evidence.
+Scout is an autonomous, transparent buying agent. Its first vertical is moving companies: it gathers a complete move brief once, discovers businesses, captures comparable itemized totals, negotiates honestly with verified leverage, flags risk, and recommends a shortlist backed by call evidence.
 
 ## Hackathon flow
 
@@ -37,7 +37,7 @@ Voice interview + document intake
 | `apps/voice-agents` | Intake and negotiator personas, tool invocation, disclosure and honesty policies | Database writes outside documented tools |
 | `apps/simulated-market` | Distinct seller behaviours and deterministic demo scenarios | Production recommendation logic |
 | `packages/contracts` | Stable shared data shapes and event names | Provider-specific implementation |
-| `packages/vertical-config` | Real-estate fields, fee taxonomy, red flags, benchmarks, allowed levers | Application control flow |
+| `packages/vertical-config` | Vertical-specific fields, fee taxonomy, red flags, benchmarks, allowed levers | Application control flow |
 | `packages/evals` | Golden-call fixtures and pass/fail checks | Live secrets or recordings |
 
 ## Hard safety and trust boundaries
@@ -50,5 +50,4 @@ Voice interview + document intake
 
 ## Definition of an integrated demo
 
-A single confirmed `RequirementSpec` must be passed unchanged through three calls. All calls finish with a structured outcome. At least one subsequent negotiation references a verified competing bid and produces a changed term. The UI then shows comparable costs, risks, a recommendation, and the linked transcript evidence.
-
+A single confirmed `MovingRequest` must be passed unchanged through three calls. All calls finish with a structured outcome. At least one subsequent negotiation references a verified competing bid and produces a changed term. The UI then shows comparable all-in costs, risks, a recommendation, and captured transcript evidence.

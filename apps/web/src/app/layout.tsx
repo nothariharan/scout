@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
             </a>
             <span className="mono hidden text-[11px] text-white/40 sm:block">
-              real-estate · IN
+              moving pilot · AI buying agent
             </span>
           </div>
         </header>
