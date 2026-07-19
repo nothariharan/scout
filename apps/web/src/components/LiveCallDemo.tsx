@@ -146,11 +146,11 @@ export function LiveCallDemo() {
       <div className="grid items-start gap-8 lg:grid-cols-[320px_1fr]">
         {/* ================= Phone ================= */}
         <div className="demo-phone relative mx-auto w-[300px]" data-speaker="scout">
-          <div className="card relative overflow-hidden rounded-[44px] p-0" style={{ height: 560 }}>
+          <div className="card relative overflow-hidden rounded-[40px] p-0" style={{ height: 560 }}>
             <div className="absolute left-1/2 top-3 z-20 h-6 w-28 -translate-x-1/2 rounded-full bg-ink/90" />
 
             {/* Screen A: intake with the user */}
-            <div className="scr-intake absolute inset-0 flex flex-col rounded-[44px] px-5 pb-6 pt-14">
+            <div className="scr-intake absolute inset-0 flex flex-col rounded-[40px] px-5 pb-6 pt-14">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-ink">Scout · intake</p>
@@ -168,7 +168,7 @@ export function LiveCallDemo() {
               </div>
               <div className="mt-5 flex-1 space-y-2.5">
                 {INTAKE.map((t, i) => (
-                  <p key={i} className={`cap-intake max-w-[92%] rounded-2xl px-3.5 py-2 text-[12.5px] leading-snug ${t.speaker === "user" ? "ml-auto bg-white/60 text-ink" : "bg-rust/90 text-white"}`} style={{ opacity: 0 }}>
+                  <p key={i} className={`cap-intake max-w-[92%] rounded-xl px-3.5 py-2 text-[12.5px] leading-snug ${t.speaker === "user" ? "ml-auto bg-white/60 text-ink" : "bg-rust/90 text-white"}`} style={{ opacity: 0 }}>
                     {t.text}
                   </p>
                 ))}
@@ -180,7 +180,7 @@ export function LiveCallDemo() {
             </div>
 
             {/* Screen B: outbound negotiation */}
-            <div className="scr-nego absolute inset-0 flex flex-col rounded-[44px] px-5 pb-6 pt-14" style={{ opacity: 0 }}>
+            <div className="scr-nego absolute inset-0 flex flex-col rounded-[40px] px-5 pb-6 pt-14" style={{ opacity: 0 }}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-ink">Comfort Stay PG</p>
@@ -199,7 +199,7 @@ export function LiveCallDemo() {
               <p className="mt-2 text-center text-[10px] text-secondary">🎙 ElevenLabs · regional accent matched</p>
               <div className="mt-4 flex-1 space-y-2.5 overflow-hidden">
                 {NEGOTIATION.map((t, i) => (
-                  <p key={i} className={`cap-nego max-w-[92%] rounded-2xl px-3.5 py-2 text-[12.5px] leading-snug ${t.speaker === "scout" ? "ml-auto bg-rust/90 text-white" : "bg-white/60 text-ink"}`} style={{ opacity: 0 }}>
+                  <p key={i} className={`cap-nego max-w-[92%] rounded-xl px-3.5 py-2 text-[12.5px] leading-snug ${t.speaker === "scout" ? "ml-auto bg-rust/90 text-white" : "bg-white/60 text-ink"}`} style={{ opacity: 0 }}>
                     {t.text}
                   </p>
                 ))}
