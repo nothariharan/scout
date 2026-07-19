@@ -5,8 +5,16 @@
 
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createServer } from './http-server.js';
 import { createRequirementStore } from '../requests/requirement-store.js';
+
+// Auto-load the repo-root .env (Node 20.6+) so keys placed there just work.
+try {
+  process.loadEnvFile(fileURLToPath(new URL('../../../../.env', import.meta.url)));
+} catch {
+  // No .env present — rely on the ambient environment.
+}
 
 const require = createRequire(import.meta.url);
 const requirement = require('../../../../packages/evals/src/fixtures/sample_requirement.json');

@@ -14,27 +14,31 @@
 //   GET  /report                   ranked comparison + recommendation
 
 import http from 'node:http';
+import { EventEmitter } from 'node:events';
 import { createNegotiationService } from './negotiation-service.js';
 import { createMovingNegotiationService } from '../moving/moving-negotiation-service.js';
 import { planNegotiation } from '../negotiation/strategy-engine.js';
 import { discoverCandidates } from '../discovery/places-client.js';
 import { createRequirementStore } from '../requests/requirement-store.js';
 import { placeCall } from '../telephony/twilio-client.js';
+import { verifyElevenLabsSignature } from './verify-signature.js';
 
 export function createServer({ requirement, benchmark, discovery = discoverCandidates, callProvider = placeCall, requirementStore = createRequirementStore({ filePath: process.env.SCOUT_LOCAL_STATE_PATH }) } = {}) {
   const service = createNegotiationService({ requirement, benchmark });
   const services = new Map();
   if (requirement) services.set('default', service);
+  const bus = new EventEmitter();
+  bus.setMaxListeners(0); // many SSE subscribers is fine
 
   const server = http.createServer(async (req, res) => {
     try {
-      await route(req, res, { service, services, benchmark, discovery, callProvider, requirementStore });
+      await route(req, res, { service, services, benchmark, discovery, callProvider, requirementStore, bus });
     } catch (err) {
       send(res, 400, { error: String(err?.message ?? err) });
     }
   });
 
-  return { server, service, services, requirementStore };
+  return { server, service, services, requirementStore, bus };
 }
 
 function createWorkflowService(spec, benchmark, idPrefix) {
@@ -49,7 +53,7 @@ function workflowForCall(services, defaultService, callId) {
 }
 
 async function route(req, res, context) {
-  const { service, services, benchmark, discovery, callProvider, requirementStore } = context;
+  const { service, services, benchmark, discovery, callProvider, requirementStore, bus } = context;
   const url = new URL(req.url, 'http://localhost');
   const { pathname } = url;
   const { method } = req;
@@ -62,6 +66,24 @@ async function route(req, res, context) {
     return send(res, 200, { ok: true });
   }
 
+  // Live activity stream for the web ledger (Server-Sent Events). Emits an
+  // initial snapshot of all sessions, then every call lifecycle event.
+  if (method === 'GET' && pathname === '/events') {
+    res.writeHead(200, {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache',
+      connection: 'keep-alive',
+      'access-control-allow-origin': process.env.WEB_ORIGIN || '*',
+    });
+    const uniq = new Set([service, ...services.values()]);
+    const calls = [...uniq].flatMap((s) => s.listCalls());
+    res.write(`data: ${JSON.stringify({ type: 'snapshot', at: new Date().toISOString(), calls })}\n\n`);
+    const listener = (e) => res.write(`data: ${JSON.stringify(e)}\n\n`);
+    bus.on('event', listener);
+    req.on('close', () => bus.off('event', listener));
+    return;
+  }
+
   // ElevenLabs webhook tools carry this secret once Scout is deployed. Keeping
   // it optional lets the local smoke tests and localhost development work,
   // while a public endpoint is never left writable by an arbitrary caller.
@@ -71,7 +93,9 @@ async function route(req, res, context) {
 
   if (method === 'POST' && pathname === '/calls') {
     const body = await readBody(req);
-    return send(res, 201, service.startCall(body));
+    const session = service.startCall(body);
+    emit(bus, 'call_started', { call_id: session.call_id, listing_id: session.listing_id, listing_name: session.listing_name, state: session.state });
+    return send(res, 201, session);
   }
 
   if (method === 'GET' && pathname === '/calls') {
@@ -83,7 +107,9 @@ async function route(req, res, context) {
     const body = await readBody(req);
     const workflow = workflowForCall(services, service, quoteMatch[1]);
     if (!workflow) return send(res, 404, { error: 'call not found' });
-    return send(res, 200, workflow.writeQuoteFields(quoteMatch[1], body));
+    const updated = workflow.writeQuoteFields(quoteMatch[1], body);
+    emit(bus, 'quote_updated', { call_id: quoteMatch[1], listing_id: updated.listing_id, rawFields: updated.rawFields });
+    return send(res, 200, updated);
   }
 
   const leverageMatch = pathname.match(/^\/calls\/([^/]+)\/leverage$/);
@@ -157,6 +183,7 @@ async function route(req, res, context) {
     services.set(record.id, workflow);
     const calls = await Promise.all(candidateList.map(async (candidate) => {
       const session = workflow.startCall(candidate);
+      emit(bus, 'call_started', { call_id: session.call_id, listing_id: candidate.listing_id, listing_name: candidate.listing_name, state: session.state });
       if (!candidate.phone) return { call_id: session.call_id, listing_id: candidate.listing_id, placed: false, reason: 'candidate has no published phone number' };
       const strategy = workflow.getStrategy(session.call_id, { vertical: candidate.service_type ?? 'moving' });
       const result = await callProvider({ to: candidate.phone, metadata: { call_id: session.call_id, strategy_brief: strategy.next_action.verbalization, verified_leverage: JSON.stringify(strategy.verified_leverage ?? []) } });
@@ -167,7 +194,10 @@ async function route(req, res, context) {
   }
 
   if (method === 'POST' && pathname === '/webhooks/elevenlabs') {
-    const event = await readBody(req);
+    const { raw, json: event } = await readRawBody(req);
+    if (!verifyElevenLabsSignature(raw, req.headers['elevenlabs-signature'], process.env.ELEVENLABS_WEBHOOK_SECRET)) {
+      return send(res, 401, { error: 'invalid signature' });
+    }
     const conversationId = event.conversation_id ?? event.data?.conversation_id;
     const workflow = [...services.values()].find((candidate) => candidate.sessions.findByConversation(conversationId));
     const session = workflow?.sessions.findByConversation(conversationId);
@@ -196,7 +226,9 @@ async function route(req, res, context) {
     const body = await readBody(req);
     const workflow = workflowForCall(services, service, outcomeMatch[1]);
     if (!workflow) return send(res, 404, { error: 'call not found' });
-    return send(res, 200, workflow.closeCall(outcomeMatch[1], body));
+    const result = workflow.closeCall(outcomeMatch[1], body);
+    emit(bus, 'call_closed', { call_id: outcomeMatch[1], listing_id: result.session?.listing_id, outcome: body, quote: result.quote ?? null });
+    return send(res, 200, result);
   }
 
   if (method === 'GET' && pathname === '/report') {
@@ -222,6 +254,27 @@ function readBody(req) {
     });
     req.on('error', reject);
   });
+}
+
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve({ raw, json: raw ? JSON.parse(raw) : {} });
+      } catch {
+        reject(new Error('invalid JSON body'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+function emit(bus, type, payload) {
+  bus.emit('event', { type, at: new Date().toISOString(), ...payload });
 }
 
 function send(res, status, payload) {
