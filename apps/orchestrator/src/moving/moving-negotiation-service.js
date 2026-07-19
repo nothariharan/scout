@@ -9,11 +9,12 @@ export function createMovingNegotiationService({ request, benchmark, idPrefix = 
   function listCalls() { return sessions.all(); }
   function writeQuoteFields(callId, fields) { return sessions.patchFields(callId, fields); }
   function getLeverage() { return comparableQuotes.map((quote) => ({ type: 'comparable_unit', value: quote.binding_total, verified: true, source: 'completed_itemized_call', vendor_id: quote.vendor_id })); }
+  function fairMarketValue() { const values = comparableQuotes.map((quote) => Number(quote.binding_total)).filter(Number.isFinite).sort((a, b) => a - b); if (!values.length) return undefined; const middle = Math.floor(values.length / 2); return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2; }
   function getStrategy(callId, fields = {}) {
     if (Object.keys(fields).length) sessions.patchFields(callId, fields);
     const session = sessions.get(callId); if (!session) throw new Error(`unknown call ${callId}`);
     const raw = session.rawFields;
-    return planNegotiation({ vertical: 'moving', posture: request?.negotiation_posture ?? 'balanced', current_offer: raw.binding_total ?? raw.first_quoted_total ?? raw.base_price, target_price: request?.budget?.ideal, reserve_price: request?.budget?.ceiling, fair_market_value: benchmark?.binding_total, counter_round: fields.counter_round ?? raw.counter_rounds ?? 0, leverage: getLeverage(), transcript: session.transcript, vendor: vendorIntelligence.get(session.listing_id) });
+    return planNegotiation({ vertical: 'moving', posture: request?.negotiation_posture ?? 'balanced', current_offer: raw.binding_total ?? raw.first_quoted_total ?? raw.base_price, target_price: request?.budget?.ideal, reserve_price: request?.budget?.ceiling, fair_market_value: benchmark?.binding_total ?? fairMarketValue(), counter_round: fields.counter_round ?? raw.counter_rounds ?? 0, leverage: getLeverage(), transcript: session.transcript, vendor: vendorIntelligence.get(session.listing_id) });
   }
   function closeCall(callId, outcome = {}) {
     const session = sessions.get(callId); if (!session) throw new Error(`unknown call ${callId}`); sessions.setOutcome(callId, outcome);

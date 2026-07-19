@@ -4,6 +4,11 @@
 
 Scout is an autonomous, transparent buying agent. Its first vertical is moving companies: it gathers a complete move brief once, discovers businesses, captures comparable itemized totals, negotiates honestly with verified leverage, flags risk, and recommends a shortlist backed by call evidence.
 
+For the moving pilot, a market reference is not fabricated: it begins empty and
+is calculated from completed, non-high-risk Scout quotes in the current batch.
+An external market-data provider can later augment this evidence, never replace
+it with an unverified number.
+
 ## Hackathon flow
 
 ```text

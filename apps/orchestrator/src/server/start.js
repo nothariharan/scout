@@ -3,7 +3,6 @@
 // hackathon; wire real intake output + the Tavily benchmark here.
 //   node apps/orchestrator/src/server/start.js   (or: npm run serve)
 
-import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from './http-server.js';
@@ -16,15 +15,11 @@ try {
   // No .env present — rely on the ambient environment.
 }
 
-const require = createRequire(import.meta.url);
-const requirement = require('../../../../packages/evals/src/fixtures/sample_requirement.json');
-
 const PORT = Number(process.env.PORT) || 8787;
-const benchmark = { effective_monthly: 14000, source: 'fallback_estimate' };
 
 const { server } = createServer({
-  requirement,
-  benchmark,
+  // Live requirements are created by the confirmed intake paths. Do not seed
+  // a rental fixture or a fabricated monthly benchmark into moving calls.
   // Ignored local state for development; production supplies a database adapter.
   requirementStore: createRequirementStore({ filePath: process.env.SCOUT_LOCAL_STATE_PATH ?? resolve('data/local/scout-state.json') }),
 });
