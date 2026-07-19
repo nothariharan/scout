@@ -22,8 +22,9 @@ import { discoverCandidates } from '../discovery/places-client.js';
 import { createRequirementStore } from '../requests/requirement-store.js';
 import { placeCall } from '../telephony/twilio-client.js';
 import { verifyElevenLabsSignature } from './verify-signature.js';
+import { createBenchmarkService } from '../benchmark/benchmark-service.js';
 
-export function createServer({ requirement, benchmark, discovery = discoverCandidates, callProvider = placeCall, requirementStore = createRequirementStore({ filePath: process.env.SCOUT_LOCAL_STATE_PATH }) } = {}) {
+export function createServer({ requirement, benchmark, discovery = discoverCandidates, callProvider = placeCall, requirementStore = createRequirementStore({ filePath: process.env.SCOUT_LOCAL_STATE_PATH }), benchmarkService = createBenchmarkService() } = {}) {
   const service = createNegotiationService({ requirement, benchmark });
   const services = new Map();
   if (requirement) services.set('default', service);
@@ -32,7 +33,7 @@ export function createServer({ requirement, benchmark, discovery = discoverCandi
 
   const server = http.createServer(async (req, res) => {
     try {
-      await route(req, res, { service, services, benchmark, discovery, callProvider, requirementStore, bus });
+      await route(req, res, { service, services, benchmark, discovery, callProvider, requirementStore, benchmarkService, bus });
     } catch (err) {
       send(res, 400, { error: String(err?.message ?? err) });
     }
@@ -53,7 +54,7 @@ function workflowForCall(services, defaultService, callId) {
 }
 
 async function route(req, res, context) {
-  const { service, services, benchmark, discovery, callProvider, requirementStore, bus } = context;
+  const { service, services, benchmark, discovery, callProvider, requirementStore, benchmarkService, bus } = context;
   const url = new URL(req.url, 'http://localhost');
   const { pathname } = url;
   const { method } = req;
@@ -140,7 +141,14 @@ async function route(req, res, context) {
     if (!record) return send(res, 404, { error: 'requirement not found' });
     if (!record.confirmed_at) return send(res, 409, { error: 'confirm the requirement before discovery' });
     const body = await readBody(req);
-    const result = await discovery({ location: record.spec.origin ?? record.spec.location, serviceType: body.service_type ?? (record.spec.vertical === 'moving' ? 'moving' : 'pg'), radiusMeters: body.radius_meters, limit: body.limit });
+    const isMoving = record.spec.vertical === 'moving';
+    const serviceType = body.service_type ?? (isMoving ? 'moving' : record.spec.deal_type === 'hostel' ? 'hostel' : 'property_agent');
+    const result = await discovery({ location: record.spec.origin ?? record.spec.location, serviceType, radiusMeters: body.radius_meters, limit: body.limit });
+    if (!isMoving && record.spec.location) {
+      const liveBenchmark = await benchmarkService.getBenchmark(record.spec.location, record.spec.deal_type);
+      services.set(record.id, createWorkflowService(record.spec, liveBenchmark, record.id));
+      result.market_research = liveBenchmark;
+    }
     await requirementStore.setCandidates(record.id, result.candidates);
     return send(res, 200, result);
   }
@@ -155,7 +163,7 @@ async function route(req, res, context) {
     if (!record) return send(res, 404, { error: 'requirement not found' });
     if (!record.confirmed_at) return send(res, 409, { error: 'confirm the requirement before adding a call candidate' });
     const body = await readBody(req);
-    const candidate = createManualCandidate(body, record.candidates ?? []);
+    const candidate = createManualCandidate({ ...body, service_type: body.service_type ?? record.spec.deal_type ?? 'property_agent' }, record.candidates ?? []);
     await requirementStore.setCandidates(record.id, [...(record.candidates ?? []), candidate]);
     return send(res, 201, { candidate });
   }
@@ -185,7 +193,7 @@ async function route(req, res, context) {
       const session = workflow.startCall(candidate);
       emit(bus, 'call_started', { call_id: session.call_id, listing_id: candidate.listing_id, listing_name: candidate.listing_name, state: session.state });
       if (!candidate.phone) return { call_id: session.call_id, listing_id: candidate.listing_id, placed: false, reason: 'candidate has no published phone number' };
-      const strategy = workflow.getStrategy(session.call_id, { vertical: candidate.service_type ?? 'moving' });
+      const strategy = workflow.getStrategy(session.call_id, { vertical: record.spec.vertical ?? candidate.service_type ?? 'real_estate' });
       const result = await callProvider({ to: candidate.phone, metadata: callMetadata({ callId: session.call_id, request: record.spec, strategy }) });
       workflow.sessions.setProvider(session.call_id, { provider_conversation_id: result.conversationId, provider_call_sid: result.sid, state: result.placed ? 'in_progress' : 'queued' });
       return { call_id: session.call_id, listing_id: candidate.listing_id, ...result };
@@ -318,13 +326,31 @@ function createManualCandidate(input = {}, existing = []) {
     listing_id: listingId,
     listing_name: listingName,
     phone,
-    service_type: 'moving',
+    service_type: String(input.service_type ?? 'property_agent'),
     source: 'manual_consented_test',
     address: String(input.address ?? 'Manually supplied test contact').trim(),
   };
 }
 
 function callMetadata({ callId, request = {}, strategy = {} }) {
+  if (request.vertical !== 'moving') {
+    const location = [request.location?.area, request.location?.city, request.location?.pincode].filter(Boolean).join(', ');
+    const propertyScope = {
+      deal_type: request.deal_type ?? '', location, occupancy: request.occupancy ?? '', furnishing: request.furnishing ?? '',
+      amenities: request.amenities ?? [], move_in_date: request.move_in_date ?? '', lease_duration_months: request.lease_duration_months ?? '',
+      deal_breakers: request.deal_breakers ?? [], ideal_budget: request.budget?.ideal ?? '', hard_ceiling: request.budget?.ceiling ?? '',
+      currency: request.budget?.currency ?? 'INR', language_pref: request.language_pref ?? 'en',
+    };
+    return {
+      call_id: callId,
+      property_scope: JSON.stringify(propertyScope),
+      location, deal_type: String(propertyScope.deal_type), furnishing: String(propertyScope.furnishing),
+      occupancy: String(propertyScope.occupancy), move_in_date: String(propertyScope.move_in_date), lease_duration_months: String(propertyScope.lease_duration_months),
+      budget_ideal: String(propertyScope.ideal_budget), budget_ceiling: String(propertyScope.hard_ceiling), currency: String(propertyScope.currency),
+      strategy_brief: strategy.next_action?.verbalization_brief ?? strategy.next_action?.verbalization ?? 'Collect an itemized rental quote without pressure.',
+      verified_leverage: JSON.stringify(strategy.verified_leverage ?? []),
+    };
+  }
   const origin = [request.origin?.area, request.origin?.city].filter(Boolean).join(', ');
   const destination = [request.destination?.area, request.destination?.city].filter(Boolean).join(', ');
   const scope = {

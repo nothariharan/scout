@@ -58,7 +58,7 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
     const updated = sessions.get(callId);
     const raw = updated.rawFields;
     return planNegotiation({
-      vertical: fields.vertical ?? 'moving',
+      vertical: fields.vertical ?? requirement?.vertical ?? 'real_estate',
       posture: requirement?.negotiation_posture ?? 'balanced',
       current_offer: raw.final_quoted_effective ?? raw.first_quoted_effective ?? raw.base_rent,
       target_price: fields.target_price ?? requirement?.budget?.ideal,

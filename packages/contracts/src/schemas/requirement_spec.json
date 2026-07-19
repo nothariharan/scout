@@ -17,9 +17,9 @@
   ],
   "properties": {
     "deal_type": {
-      "description": "Which rental product the user wants.",
+      "description": "Which real-estate rental product the user wants. Purchase flows require a separate total-cost and legal-verification contract before they can be dispatched.",
       "type": "string",
-      "enum": ["pg", "short_stay_rental"]
+      "enum": ["pg", "hostel", "co_living", "rental_apartment", "short_stay_rental"]
     },
     "location": {
       "description": "Where the user wants to live.",

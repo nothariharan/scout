@@ -10,6 +10,8 @@ const config = legacyRealEstate;
 
 const profiles = Object.freeze({
   [legacyRealEstate.vertical_name]: legacyRealEstate,
+  // Retain the original profile id for old fixtures and saved local data.
+  real_estate_pg: legacyRealEstate,
   [moving.vertical_name]: moving,
 });
 

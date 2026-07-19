@@ -1,7 +1,8 @@
 {
   "_comment": "SWAPPABLE VERTICAL CONFIG. This is the ONLY file you edit to switch Scout to a new vertical (e.g. moving/packers, car rentals). Change these values, keep the @scout/contracts schemas and scoring functions untouched, and the whole pipeline retargets. Field NAMES here are a contract - do not rename them, only change their values.",
 
-  "vertical_name": "real_estate_pg",
+  "vertical_name": "real_estate",
+  "display_name": "Indian real estate rentals",
   "currency": "INR",
 
   "effective_cost_formula": {
@@ -32,5 +33,10 @@
 
   "leverage_types": ["comparable_unit", "benchmark", "fee_attack"],
   "benchmark_source": "tavily",
-  "seller_personas": ["scammer_deposit", "fee_padder_caves", "stonewaller"]
+  "seller_personas": ["scammer_deposit", "fee_padder_caves", "stonewaller"],
+
+  "negotiation_policy": {
+    "max_counter_rounds": { "aggressive": 3, "balanced": 2, "fast": 1 },
+    "target_discount_percent": { "aggressive": 12, "balanced": 7, "fast": 3 }
+  }
 }

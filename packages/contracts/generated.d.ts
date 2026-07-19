@@ -42,7 +42,7 @@ export interface CandidateListing {
   /**
    * Same vocabulary as requirement_spec deal_type.
    */
-  deal_type: "pg" | "short_stay_rental";
+  deal_type: "pg" | "hostel" | "co_living" | "rental_apartment" | "short_stay_rental";
   /**
    * Contact number to dial. May be absent until enriched.
    */
@@ -302,9 +302,9 @@ export interface Recommendation {
  */
 export interface RequirementSpec {
   /**
-   * Which rental product the user wants.
+   * Which real-estate rental product the user wants. Purchase flows require a separate total-cost and legal-verification contract before they can be dispatched.
    */
-  deal_type: "pg" | "short_stay_rental";
+  deal_type: "pg" | "hostel" | "co_living" | "rental_apartment" | "short_stay_rental";
   /**
    * Where the user wants to live.
    */

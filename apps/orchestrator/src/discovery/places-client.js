@@ -5,13 +5,20 @@ const USER_AGENT = process.env.OSM_USER_AGENT ?? 'ScoutBuyingAgent/0.1 (+https:/
 const geocodeCache = new Map();
 let lastGeocodeAt = 0;
 
-const SEARCH_TERMS = { moving: 'mover|moving|packers|relocation|logistics', pg: 'pg|paying guest|hostel|coliving|co-living', home_services: 'plumber|electrician|cleaning|pest control' };
+const SEARCH_TERMS = {
+  moving: 'mover|moving|packers|relocation|logistics',
+  pg: 'pg|paying guest|hostel|coliving|co-living',
+  hostel: 'hostel|pg|paying guest|coliving|co-living',
+  rental_apartment: 'apartment|flat|residential|real estate|property',
+  property_agent: 'real estate|property agent|broker|estate agent',
+  home_services: 'plumber|electrician|cleaning|pest control',
+};
 
 /** Discover named OSM businesses around a confirmed location. */
-export async function discoverCandidates({ location, radiusMeters = 5000, serviceType = 'moving', limit = 12, fetchImpl = fetch } = {}) {
+export async function discoverCandidates({ location, radiusMeters = 5000, serviceType = 'property_agent', limit = 12, fetchImpl = fetch } = {}) {
   if (!location?.area && (location?.lat == null || location?.lng == null)) throw new Error('discovery requires a location area or coordinates');
   const center = await resolveCenter(location, fetchImpl);
-  const term = SEARCH_TERMS[serviceType] ?? SEARCH_TERMS.moving;
+  const term = SEARCH_TERMS[serviceType] ?? SEARCH_TERMS.property_agent;
   const radius = Math.min(Math.max(Number(radiusMeters) || 5000, 250), 15000);
   const query = `[out:json][timeout:20];(nwr(around:${radius},${center.lat},${center.lng})["name"~"${term}",i];);out center tags;`;
   const response = await fetchImpl(OVERPASS_URL, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': USER_AGENT }, body: new URLSearchParams({ data: query }).toString() });

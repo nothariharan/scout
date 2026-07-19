@@ -17,10 +17,10 @@ export default function Home() {
           Scout researches a market, talks to businesses, negotiates on your behalf, and learns from every outcome. Moving companies are the first vertical; the negotiation engine is built to travel.
         </p>
         <div className="flex flex-wrap gap-3 pt-1">
-          <a href="/moving" className="btn">
+          <a href="/real-estate" className="btn">
             START INTAKE →
           </a>
-          <a href="/moving/report" className="btn-ghost">
+          <a href="/report" className="btn-ghost">
             SEE A REPORT
           </a>
         </div>

@@ -11,6 +11,7 @@ import { createRequirementStore } from '../requests/requirement-store.js';
 // Auto-load the repo-root .env (Node 20.6+) so keys placed there just work.
 try {
   process.loadEnvFile(fileURLToPath(new URL('../../../../.env', import.meta.url)));
+  process.loadEnvFile(fileURLToPath(new URL('../../../../.env.local', import.meta.url)));
 } catch {
   // No .env present — rely on the ambient environment.
 }
