@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* "Liquid glass" theme: clear-as-water panels over a glacial wallpaper.
+/* Apple HIG Materials theme: frosted translucent surfaces over a pearl field.
    Surfaces are nearly transparent — refraction (SVG displacement), a small
    blur, and bright specular edges do the work instead of a milky frost fill.
    Token NAMES are kept from the original theme so every page re-skins without
@@ -25,7 +25,7 @@
   --charcoal: #26262f;
   --secondary: rgba(38, 38, 55, 0.56);
   --glass: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.68);
+  --glass-border: rgba(255, 255, 255, 0.45);
   --line: rgba(35, 35, 55, 0.13);
 }
 
@@ -118,7 +118,6 @@
      Use on an element with position:relative + a border-radius:
        <div class="lg-container"> <div class="lg-filter"/> <div class="lg-overlay"/>
        <div class="lg-specular"/> <div class="lg-content">…</div> </div>
-     The #lg-dist SVG filter (defined once in layout) refracts the backdrop. */
   .lg-container {
     position: relative;
     overflow: hidden;
@@ -149,10 +148,7 @@
     z-index: 2;
     border-radius: inherit;
     pointer-events: none;
-    box-shadow:
-      inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.95),
-      inset -1px -1px 1px rgba(255, 255, 255, 0.55),
-      inset 0 0 10px rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   }
   .lg-content {
     position: relative;
@@ -270,10 +266,7 @@
     backdrop-filter: blur(30px) saturate(180%);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    box-shadow:
-      0 12px 36px rgba(70, 60, 130, 0.14),
-      inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.9),
-      inset -1px -1px 1px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 28px rgba(40, 40, 80, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
   }
 
   /* Deep-water panel for hero/emphasis (dark glass under the ice). */

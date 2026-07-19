@@ -12,38 +12,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        {/* Refraction filter for the liquid-glass surfaces (defined once). */}
-        <svg xmlns="http://www.w3.org/2000/svg" style={{ position: "absolute", width: 0, height: 0 }} aria-hidden>
-          <defs>
-            <filter
-              id="lg-dist"
-              x="-50%"
-              y="-50%"
-              width="200%"
-              height="200%"
-              filterUnits="objectBoundingBox"
-              primitiveUnits="userSpaceOnUse"
-              colorInterpolationFilters="linearRGB"
-            >
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.008 0.008"
-                numOctaves="2"
-                seed="92"
-                stitchTiles="stitch"
-                result="noise"
-              />
-              <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
-              <feDisplacementMap
-                in="SourceGraphic"
-                in2="blurred"
-                scale="70"
-                xChannelSelector="R"
-                yChannelSelector="G"
-              />
-            </filter>
-          </defs>
-        </svg>
 
         {/* Floating liquid-glass menu capsule: brand row + stage tabs. */}
         <div className="sticky top-3 z-40 px-3">
