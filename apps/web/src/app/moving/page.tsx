@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { MovingRequest } from "@scout/contracts/types";
+import { VoiceIntakePanel } from "@/components/VoiceIntakePanel";
 
 const INPUT = "w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-rust";
 const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
@@ -35,6 +36,7 @@ export default function MovingIntakePage() {
 
   return <div className="space-y-6">
     <header className="max-w-2xl"><p className="mono text-[11px] uppercase tracking-[0.18em] text-rust">Moving pilot · confirmed request</p><h1 className="mt-2 text-4xl">Plan the move once.</h1><p className="mt-2 text-sm leading-relaxed text-charcoal/70">Scout carries this exact scope into every company conversation. It can ask, compare, and negotiate; it never books or pays.</p></header>
+    <VoiceIntakePanel onConfirmed={setStatus} />
     <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <section className="card space-y-5 p-5">
         <div className="grid gap-4 sm:grid-cols-2"><Address label="Move from" value={request.origin} onChange={(key, value) => updateAddress("origin", key, value)} /><Address label="Move to" value={request.destination} onChange={(key, value) => updateAddress("destination", key, value)} /></div>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@elevenlabs/react": "^1.10.1",
     "@scout/contracts": "workspace:*",
     "next": "14.2.5",
     "react": "^18.3.1",
