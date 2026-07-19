@@ -111,7 +111,7 @@ export default function CallsPage() {
           <button onClick={start} className="btn-ghost">
             ↻ REPLAY
           </button>
-          <a href="/report/req_demo_koramangala_pg" aria-disabled={!done}
+          <a href="/moving/report" aria-disabled={!done}
             className={`btn ${done ? "" : "pointer-events-none opacity-40"}`}>
             REPORT →
           </a>

@@ -3,15 +3,15 @@
 import { usePathname } from "next/navigation";
 
 const STAGES = [
-  { n: "01", label: "INTAKE", href: "/moving", match: (p: string) => p.startsWith("/moving") || p.startsWith("/intake") },
+  { n: "01", label: "INTAKE", href: "/moving", match: (p: string) => p === "/moving" || p.startsWith("/intake") },
   { n: "02", label: "DISCOVER", href: "/discover", match: (p: string) => p.startsWith("/discover") },
   { n: "03", label: "ENGINE", href: "/intelligence", match: (p: string) => p.startsWith("/intelligence") },
   { n: "04", label: "CALLS", href: "/calls", match: (p: string) => p.startsWith("/calls") },
   {
     n: "05",
     label: "REPORT",
-    href: "/report/req_demo_koramangala_pg",
-    match: (p: string) => p.startsWith("/report"),
+    href: "/moving/report",
+    match: (p: string) => p.startsWith("/report") || p.startsWith("/moving/report"),
   },
 ];
 

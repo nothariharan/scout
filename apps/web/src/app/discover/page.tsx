@@ -1,141 +1,112 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { DEMO_CANDIDATES, DEMO_REQUIREMENT } from "@/lib/demo-data";
-import { MapPanel } from "@/components/MapPanel";
-import { inr } from "@/lib/format";
+import { useEffect, useMemo, useState } from "react";
+
+type Candidate = {
+  listing_id: string;
+  listing_name: string;
+  phone?: string;
+  source?: string;
+  distance_km?: number;
+  commute_minutes?: number;
+  address?: string;
+};
+
+type MovingBrief = { origin?: { area?: string; city?: string }; destination?: { area?: string; city?: string }; home_size?: string; budget?: { ideal?: number; ceiling?: number; currency?: string } };
 
 export default function DiscoverPage() {
-  const spec = DEMO_REQUIREMENT.spec;
-  const [candidates, setCandidates] = useState(DEMO_CANDIDATES);
+  const [brief, setBrief] = useState<MovingBrief | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(false);
-  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
-  const [liveMode, setLiveMode] = useState(false);
   const [dispatching, setDispatching] = useState(false);
-  const maxCommute = spec.commute_constraint?.max_minutes ?? Infinity;
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const inScope = useMemo(
-    () => candidates.filter((c) => (c.commute_minutes ?? 0) <= maxCommute),
-    [candidates, maxCommute]
-  );
-  const outOfScope = candidates.filter((c) => (c.commute_minutes ?? 0) > maxCommute);
+  const requirementId = typeof window === "undefined" ? null : localStorage.getItem("scout_moving_requirement_id") ?? localStorage.getItem("scout_requirement_id");
+  const callable = useMemo(() => candidates.filter((candidate) => candidate.phone), [candidates]);
 
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(inScope.map((c) => c.listing_id)));
-  const [activeId, setActiveId] = useState<string | undefined>(inScope[0]?.listing_id);
+  useEffect(() => {
+    if (!requirementId) return;
+    void fetch(`/api/orchestrator/requirements/${requirementId}`, { cache: "no-store" })
+      .then(async (response) => {
+        const record = await response.json();
+        if (!response.ok) throw new Error(record.error ?? "Could not load moving brief.");
+        setBrief(record.spec);
+        if (record.candidates?.length) {
+          setCandidates(record.candidates);
+          setSelected(new Set(record.candidates.filter((candidate: Candidate) => candidate.phone).map((candidate: Candidate) => candidate.listing_id)));
+        }
+      })
+      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Could not load moving brief."));
+  }, [requirementId]);
 
   function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+    setSelected((previous) => {
+      const next = new Set(previous);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   }
 
-  async function searchOpenStreetMap() {
-    const requirementId = localStorage.getItem("scout_requirement_id");
-    if (!requirementId) { setDiscoveryError("Confirm a requirement in Intake before live discovery."); return; }
-    setLoading(true); setDiscoveryError(null);
+  async function search() {
+    if (!requirementId) { setError("Start by confirming a moving brief in Intake."); return; }
+    setLoading(true); setError(null);
     try {
-      const response = await fetch(`/api/orchestrator/requirements/${requirementId}/discover`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ service_type: "moving", radius_meters: 8000, limit: 12 }) });
+      const response = await fetch(`/api/orchestrator/requirements/${requirementId}/discover`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ service_type: "moving", radius_meters: 8000, limit: 12 }),
+      });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "OpenStreetMap discovery failed.");
       const found = result.candidates ?? [];
       setCandidates(found);
-      setSelected(new Set(found.filter((candidate: { phone?: string }) => candidate.phone).map((candidate: { listing_id: string }) => candidate.listing_id)));
-      setActiveId(found[0]?.listing_id);
-      setLiveMode(true);
-    } catch (error) { setDiscoveryError(error instanceof Error ? error.message : "OpenStreetMap discovery failed."); }
+      setSelected(new Set(found.filter((candidate: Candidate) => candidate.phone).map((candidate: Candidate) => candidate.listing_id)));
+      if (!found.length) setError("OpenStreetMap found no published moving-company listings here. Add a company manually or try a broader locality.");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "OpenStreetMap discovery failed."); }
     finally { setLoading(false); }
   }
 
   async function dispatch() {
-    const requirementId = localStorage.getItem("scout_requirement_id");
-    if (!requirementId) { setDiscoveryError("Confirm a requirement before dispatch."); return; }
-    setDispatching(true); setDiscoveryError(null);
+    if (!requirementId) { setError("Confirm a moving brief before dispatch."); return; }
+    setDispatching(true); setError(null);
     try {
-      const response = await fetch(`/api/orchestrator/requirements/${requirementId}/dispatch`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ listing_ids: [...selected] }) });
+      const response = await fetch(`/api/orchestrator/requirements/${requirementId}/dispatch`, {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ listing_ids: [...selected] }),
+      });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Dispatch failed.");
       localStorage.setItem("scout_dispatch", JSON.stringify(result.calls));
       window.location.assign("/calls");
-    } catch (error) { setDiscoveryError(error instanceof Error ? error.message : "Dispatch failed."); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Dispatch failed."); }
     finally { setDispatching(false); }
   }
 
-  return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl">Discover &amp; geofence</h1>
-          <p className="mt-1 text-sm text-charcoal/70">
-            Filtered by radius and commute time before any call goes out.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={searchOpenStreetMap} disabled={loading} className="btn-ghost">
-            {loading ? "SEARCHING OSM…" : "SEARCH OSM"}
-          </button>
-          <span className="pill">{selected.size} SELECTED</span>
-          <button onClick={dispatch} disabled={selected.size === 0 || dispatching}
-            className={`btn ${selected.size ? "" : "opacity-40"}`}>
-            DISPATCH →
-          </button>
-        </div>
-      </header>
+  const origin = [brief?.origin?.area, brief?.origin?.city].filter(Boolean).join(", ") || "your origin";
+  const destination = [brief?.destination?.area, brief?.destination?.city].filter(Boolean).join(", ") || "destination";
 
-      <div className="wire" />
-      {discoveryError && <p className="mono text-[11px] text-rust">{discoveryError}</p>}
+  return <div className="space-y-6">
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div><p className="mono text-[11px] uppercase tracking-[0.18em] text-rust">Moving pilot · OpenStreetMap discovery</p><h1 className="mt-2 text-2xl">Find movers before Scout calls.</h1><p className="mt-1 text-sm text-charcoal/70">{origin} → {destination}. Select only businesses with a published phone number for a real outbound test.</p></div>
+      <div className="flex flex-wrap items-center gap-3"><button onClick={search} disabled={loading} className="btn-ghost">{loading ? "SEARCHING…" : "SEARCH OSM"}</button><span className="pill">{selected.size} SELECTED</span><button onClick={dispatch} disabled={!selected.size || dispatching} className={`btn ${selected.size ? "" : "opacity-40"}`}>{dispatching ? "PREPARING…" : "DISPATCH →"}</button></div>
+    </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <ol>
-          {inScope.map((c, i) => {
-            const on = selected.has(c.listing_id);
-            return (
-              <li key={c.listing_id}>
-                <div
-                  onMouseEnter={() => setActiveId(c.listing_id)}
-                  className="flex items-start gap-4 py-4"
-                  style={{ opacity: on ? 1 : 0.5 }}
-                >
-                  <span className="call-idx w-10 shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-medium text-ink">{c.listing_name}</div>
-                        <div className="mono mt-0.5 text-[11px] text-charcoal/55">
-                          {c.source} · {c.distance_km} km · {c.commute_minutes} min
-                        </div>
-                      </div>
-                      <label className="mono flex cursor-pointer items-center gap-2 text-[11px] text-charcoal/60">
-                        <input type="checkbox" checked={on} onChange={() => toggle(c.listing_id)}
-                          style={{ accentColor: "var(--rust)" }} className="h-4 w-4" />
-                        {on ? "WILL CALL" : "SKIPPED"}
-                      </label>
-                    </div>
-                    <div className="mono mt-2 text-sm">
-                      <span className="text-charcoal/55">advertised </span>
-                      <span className="text-ink">{inr(c.advertised_rent)}</span>
-                      <span className="ml-2 text-[11px] text-charcoal/45">headline only</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="wire" />
-              </li>
-            );
-          })}
+    <div className="wire" />
+    {!requirementId && <p className="mono text-[11px] text-rust">No confirmed moving brief yet. <a className="underline" href="/moving">Create one first.</a></p>}
+    {error && <p className="mono text-[11px] text-rust">{error}</p>}
 
-          {outOfScope.length > 0 && (
-            <li className="mono py-4 text-[11px] text-charcoal/50">
-              {outOfScope.length} excluded over the {maxCommute}-min commute cap — before dispatch, not after.
-            </li>
-          )}
-        </ol>
+    <section className="grid gap-4 md:grid-cols-3">
+      <div className="card p-4"><p className="mono text-[10px] uppercase text-charcoal/50">Route</p><p className="mt-2 text-sm">{origin} → {destination}</p></div>
+      <div className="card p-4"><p className="mono text-[10px] uppercase text-charcoal/50">Move scope</p><p className="mt-2 text-sm">{brief?.home_size?.replace(/_/g, " ") ?? "Not confirmed"}</p></div>
+      <div className="card p-4"><p className="mono text-[10px] uppercase text-charcoal/50">Callable listings</p><p className="mt-2 text-sm">{callable.length} with published phone numbers</p></div>
+    </section>
 
-        <div className="h-[360px]">
-          <MapPanel spec={spec} candidates={inScope} selectedIds={selected} activeId={activeId} />
-        </div>
-      </div>
-    </div>
-  );
+    <ol className="card divide-y divide-line">
+      {!candidates.length && <li className="p-6 text-sm text-charcoal/60">Search OpenStreetMap to build the call list. Scout does not invent vendors or phone numbers.</li>}
+      {candidates.map((candidate, index) => {
+        const isSelected = selected.has(candidate.listing_id);
+        const canCall = Boolean(candidate.phone);
+        return <li key={candidate.listing_id} className="flex items-center gap-4 p-4"><span className="call-idx w-9 shrink-0">{String(index + 1).padStart(2, "0")}</span><div className="min-w-0 flex-1"><p className="font-medium text-ink">{candidate.listing_name}</p><p className="mono mt-1 text-[11px] text-charcoal/55">{candidate.source ?? "openstreetmap"}{candidate.distance_km != null ? ` · ${candidate.distance_km} km` : ""}{candidate.address ? ` · ${candidate.address}` : ""}</p><p className="mono mt-1 text-[11px] text-charcoal/65">{canCall ? candidate.phone : "No published phone number — research only"}</p></div><label className={`mono flex items-center gap-2 text-[11px] ${canCall ? "cursor-pointer" : "opacity-40"}`}><input type="checkbox" disabled={!canCall} checked={isSelected} onChange={() => toggle(candidate.listing_id)} style={{ accentColor: "var(--rust)" }} className="h-4 w-4" />{isSelected ? "WILL CALL" : "SKIP"}</label></li>;
+      })}
+    </ol>
+  </div>;
 }
