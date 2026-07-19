@@ -1,186 +1,47 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { DEMO_CALLS } from "@/lib/demo-data";
-import type { CallPhase, CallRecord, CallStreamEvent } from "@/lib/types";
-import { TranscriptView } from "@/components/TranscriptView";
-import { RiskBadge } from "@/components/RiskBadge";
-import { OUTCOME_LABEL, inr } from "@/lib/format";
+import { useCallback, useEffect, useState } from "react";
 
-const PHASE_LABEL: Record<CallPhase, string> = {
-  queued: "QUEUED",
-  dialing: "DIALING",
-  live: "LIVE",
-  completed: "DONE",
-  failed: "FAILED",
-};
+type Call = { call_id: string; listing_id: string; listing_name: string; phone?: string; state: "queued" | "in_progress" | "completed"; transcript?: string; outcome?: { status?: string; reason?: string }; provider?: string; provider_conversation_id?: string };
 
-function blankCalls(): CallRecord[] {
-  return DEMO_CALLS.map((c) => ({
-    ...c,
-    phase: "queued",
-    transcript: [],
-    outcome: undefined,
-    quote: undefined,
-  }));
-}
+const label: Record<Call["state"], string> = { queued: "QUEUED", in_progress: "LIVE", completed: "COMPLETE" };
 
 export default function CallsPage() {
-  const [calls, setCalls] = useState<CallRecord[]>(blankCalls);
-  const [done, setDone] = useState(false);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [orchestratorOnline, setOrchestratorOnline] = useState<boolean | null>(null);
-  const esRef = useRef<EventSource | null>(null);
+  const [calls, setCalls] = useState<Call[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
 
-  function start() {
-    esRef.current?.close();
-    setDone(false);
-    setCalls(blankCalls());
-    const es = new EventSource("/api/calls/stream");
-    esRef.current = es;
-    es.onmessage = (ev) => {
-      const e: CallStreamEvent = JSON.parse(ev.data);
-      if (e.type === "done") {
-        setDone(true);
-        es.close();
-        return;
-      }
-      setCalls((prev) =>
-        prev.map((c) => {
-          if (!("listing_id" in e) || c.listing_id !== e.listing_id) return c;
-          if (e.type === "phase") return { ...c, phase: e.phase };
-          if (e.type === "line") return { ...c, transcript: [...c.transcript, e.line] };
-          if (e.type === "outcome") return { ...c, outcome: e.outcome, quote: e.quote };
-          return c;
-        })
-      );
-    };
-    es.onerror = () => es.close();
-  }
-
-  useEffect(() => {
-    async function loadDispatchedCalls() {
-      const requirementId = localStorage.getItem("scout_requirement_id");
-      if (!requirementId) { start(); return; }
-      try {
-        const response = await fetch(`/api/orchestrator/requirements/${requirementId}/calls`, { cache: "no-store" });
-        const result = await response.json();
-        if (!response.ok || !result.calls?.length) { start(); return; }
-        setCalls(result.calls.map((call: { listing_id: string; listing_name: string; state: string; transcript?: string; outcome?: CallRecord["outcome"] }) => ({
-          listing_id: call.listing_id,
-          listing_name: call.listing_name,
-          persona: "OpenStreetMap candidate",
-          phase: call.state === "completed" ? "completed" : call.state === "in_progress" ? "live" : "queued",
-          transcript: call.transcript ? [{ index: 0, speaker: "seller", text: call.transcript }] : [],
-          outcome: call.outcome ?? undefined,
-        })));
-        setDone(result.calls.every((call: { state: string }) => call.state === "completed"));
-      } catch { start(); }
-    }
-    void loadDispatchedCalls();
-    fetch("/api/orchestrator/health", { cache: "no-store" })
-      .then((res) => setOrchestratorOnline(res.ok))
-      .catch(() => setOrchestratorOnline(false));
-    return () => esRef.current?.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const load = useCallback(async () => {
+    const id = localStorage.getItem("scout_moving_requirement_id") ?? localStorage.getItem("scout_requirement_id");
+    if (!id) { setCalls([]); setError("No confirmed moving brief. Start in Intake before dispatching calls."); setLoading(false); return; }
+    try {
+      const response = await fetch(`/api/orchestrator/requirements/${id}/calls`, { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Could not load call activity.");
+      setCalls(result.calls ?? []); setError(null); setRefreshedAt(new Date().toLocaleTimeString());
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load call activity."); }
+    finally { setLoading(false); }
   }, []);
 
-  const liveCount = calls.filter((c) => c.phase === "live" || c.phase === "dialing").length;
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
+  }, [load]);
 
-  return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl">Live activity</h1>
-          <p className="mt-1 text-sm text-charcoal/70">
-            {liveCount > 0
-              ? `${liveCount} call${liveCount > 1 ? "s" : ""} in progress.`
-              : done
-                ? "All calls complete."
-              : "Connecting…"}
-          </p>
-          <p className="mono mt-1 text-[10px] uppercase tracking-wide text-charcoal/45">
-            {orchestratorOnline === true
-              ? "Orchestrator connected · agent tools write live outcomes"
-              : orchestratorOnline === false
-                ? "Demo replay · start the orchestrator for live agent outcomes"
-                : "Checking orchestrator connection…"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={start} className="btn-ghost">
-            ↻ REPLAY
-          </button>
-          <a href="/moving/report" aria-disabled={!done}
-            className={`btn ${done ? "" : "pointer-events-none opacity-40"}`}>
-            REPORT →
-          </a>
-        </div>
-      </header>
+  const live = calls.filter((call) => call.state === "in_progress").length;
+  const complete = calls.filter((call) => call.state === "completed").length;
 
-      <div className="wire" />
-
-      <ol>
-        {calls.map((c, i) => {
-          const isOpen = open[c.listing_id] ?? false;
-          const live = c.phase === "live" || c.phase === "dialing";
-          return (
-            <li key={c.listing_id}>
-              <button
-                onClick={() => setOpen((o) => ({ ...o, [c.listing_id]: !isOpen }))}
-                className="flex w-full items-center gap-4 py-4 text-left"
-              >
-                <span className="call-idx w-12 shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-ink">{c.listing_name}</div>
-                  <div className="mono mt-0.5 text-[11px] uppercase tracking-wide text-charcoal/55">
-                    STYLE: {c.persona}
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  {c.quote && <RiskBadge flag={c.quote.risk_flag} />}
-                  {c.outcome ? (
-                    <span className="pill">{OUTCOME_LABEL[c.outcome.status].toUpperCase()}</span>
-                  ) : (
-                    <span className="mono flex items-center gap-1.5 text-[11px]"
-                      style={{ color: live ? "var(--rust)" : "var(--charcoal)" }}>
-                      {live && (
-                        <span className="pulse inline-block h-2 w-2 rounded-full"
-                          style={{ background: "var(--rust)" }} />
-                      )}
-                      {PHASE_LABEL[c.phase]}
-                    </span>
-                  )}
-                </div>
-              </button>
-
-              {isOpen && (
-                <div className="pb-5 pl-16">
-                  <div className="wire mb-3" />
-                  {c.quote && (
-                    <div className="mono mb-3 flex flex-wrap items-center gap-3 text-[12px]">
-                      <span className="text-charcoal/60">
-                        effective <span className="text-ink">{inr(c.quote.effective_monthly_cost)}/mo</span>
-                      </span>
-                      {c.quote.price_moved && (
-                        <span className="pill pill-sage">
-                          MOVED {inr(c.quote.first_quoted_effective)} → {inr(c.quote.final_quoted_effective)}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {c.transcript.length > 0 ? (
-                    <TranscriptView lines={c.transcript} />
-                  ) : (
-                    <p className="mono text-[12px] text-charcoal/50">Waiting for connect…</p>
-                  )}
-                </div>
-              )}
-              <div className="wire" />
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
+  return <div className="space-y-6">
+    <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="mono text-[11px] uppercase tracking-[0.18em] text-rust">Moving pilot · truthful call ledger</p><h1 className="mt-2 text-2xl">Call activity.</h1><p className="mt-1 text-sm text-charcoal/70">{live ? `${live} live call${live === 1 ? "" : "s"}.` : `${complete} completed call${complete === 1 ? "" : "s"}; queued calls will not dial until outbound calling is enabled.`}</p></div><div className="flex items-center gap-3"><button onClick={() => void load()} className="btn-ghost">REFRESH</button><a href="/moving/report" className="btn">VIEW REPORT →</a></div></header>
+    <div className="wire" />
+    {error && <p className="mono text-[11px] text-rust">{error}</p>}
+    {!error && <p className="mono text-[10px] uppercase tracking-wide text-charcoal/45">{refreshedAt ? `Last refreshed ${refreshedAt} · polling every 5 seconds` : "Connecting to orchestrator…"}</p>}
+    <ol className="card divide-y divide-line">
+      {loading && !calls.length && <li className="p-6 text-sm text-charcoal/60">Loading dispatched moving calls…</li>}
+      {!loading && !calls.length && !error && <li className="p-6 text-sm text-charcoal/60">No mover has been dispatched. Go to Discovery, select a published business number, then dispatch a consented test.</li>}
+      {calls.map((call, index) => <li key={call.call_id} className="grid gap-3 p-5 sm:grid-cols-[44px_1fr_auto]"><span className="call-idx">{String(index + 1).padStart(2, "0")}</span><div><p className="font-medium text-ink">{call.listing_name}</p><p className="mono mt-1 text-[11px] text-charcoal/55">{call.phone ?? "No public number"} · {call.call_id}</p>{call.transcript && <p className="mt-3 border-l-2 border-line pl-3 text-sm text-charcoal/70">{call.transcript}</p>}{call.outcome?.reason && <p className="mono mt-2 text-[11px] text-charcoal/55">{call.outcome.reason}</p>}</div><div className="sm:text-right"><span className={`pill ${call.state === "in_progress" ? "pill-sage" : ""}`}>{call.outcome?.status?.replace(/_/g, " ") ?? label[call.state]}</span><p className="mono mt-2 text-[10px] uppercase text-charcoal/45">{call.provider ?? "not placed"}</p></div></li>)}
+    </ol>
+  </div>;
 }
