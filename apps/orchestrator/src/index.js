@@ -1,6 +1,7 @@
 // @scout/orchestrator — backend public API.
 // Person B modules, all wired to @scout/contracts + @scout/vertical-config.
 
+// Scoring + pipeline
 export { normalizeQuote } from './normalize/normalize-quote.js';
 export { createQuotesStore } from './store/quotes-store.js';
 export { createBenchmarkService } from './benchmark/benchmark-service.js';
@@ -15,9 +16,11 @@ export { generateRecommendation } from './transcripts/recommend.js';
 export { runComparison } from './pipeline.js';
 export * as outcomes from './outcomes/call-outcome.js';
 
-// Call orchestration + integration surface (mid-call tool API, telephony, discovery).
+// Call orchestration + integration surface (mid-call tool API, webhooks, telephony)
 export { createCallSessionStore } from './calls/call-session.js';
+export { buildInitiationData } from './agent/initiation-data.js';
 export { createNegotiationService } from './server/negotiation-service.js';
 export { createServer } from './server/http-server.js';
+export { verifyElevenLabsSignature } from './server/verify-signature.js';
 export { discoverCandidates } from './discovery/places-client.js';
-export { placeCall, placeBatch } from './telephony/twilio-client.js';
+export { placeCall, placeBatch } from './telephony/elevenlabs-telephony.js';

@@ -113,6 +113,20 @@ Before countering on price, the agent asks the backend what leverage is real.
   - `reason` required for `callback_scheduled` and `declined`.
 - **Returns:** the finalized session + the normalized, risk-assessed quote.
 
+## Call start & end — ElevenLabs webhooks (HMAC-verified)
+
+Besides the mid-call tools, the backend exposes the two webhooks ElevenLabs
+invokes around the call. Both verify `ElevenLabs-Signature` (`t=..,v0=..`, HMAC‑
+SHA256 over `${t}.${body}`) when `ELEVENLABS_WEBHOOK_SECRET` is set.
+
+- `POST /agent/personalization` — ElevenLabs POSTs `{ caller_id, agent_id, called_number, call_sid }`; we return `conversation_initiation_client_data` with the confirmed job spec as `dynamic_variables` (reused verbatim on every call).
+- `POST /agent/post-call` — receives the post-call transcription and attaches transcript evidence to the matching session (by `conversation_id`).
+
+For calls **we** place, the same `conversation_initiation_client_data` is passed
+directly in the ElevenLabs outbound-call request
+(`POST https://api.elevenlabs.io/v1/convai/twilio/outbound-call`), so the spec is
+injected without a separate webhook round-trip.
+
 ## Reporting (Person C)
 
 - `GET {{base}}/report` → `{ ranked, recommendation, benchmark }` — all quotes

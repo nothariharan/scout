@@ -75,9 +75,26 @@ benchmark — the agent can never be handed an invented competing bid.
 | Path | Challenge resource | Status |
 | --- | --- | --- |
 | `src/discovery/places-client.js` | Google Places call-list + commute geofence | stub w/ env key |
-| `src/telephony/twilio-client.js` | Twilio/SIP dial-out + batch calling | stub; bridges to ElevenLabs agent |
+| `src/telephony/elevenlabs-telephony.js` | ElevenLabs outbound-call + batch calling (bridges Twilio) | real endpoints; needs agent + phone-number ids |
+| `src/agent/initiation-data.js` | RequirementSpec -> dynamic_variables | done |
 
 The orchestrator triggers the batch and owns call state; the ElevenLabs agent
-owns the audio. Twilio call SIDs map to `call-session` ids so mid-call tool
-writes land in the right session.
+owns the audio. `call_sid` / `conversation_id` map to `call-session` ids so
+mid-call tool writes and the post-call webhook land in the right session.
+
+### ElevenLabs webhooks
+
+| Method / path | ElevenLabs event | Purpose |
+| --- | --- | --- |
+| `POST /agent/personalization` | call-start personalization | return `conversation_initiation_client_data` (the job spec as dynamic_variables) |
+| `POST /agent/post-call` | post-call transcription | attach transcript evidence to the session |
+
+Both verify the `ElevenLabs-Signature` HMAC when `ELEVENLABS_WEBHOOK_SECRET` is
+set (skipped in dev). See `docs/AGENT-TOOLS.md`.
+
+### Tests
+
+```bash
+node --test apps/orchestrator/test/    # unit + service + HTTP integration
+```
 

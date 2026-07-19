@@ -1,18 +1,17 @@
 // http-server.js
-// Dependency-free HTTP surface for the mid-call tool API + report. ElevenLabs
-// agent tools POST structured fields during the call; the frontend GETs the
-// report. Framework-free (node:http) so the app stays independently runnable.
+// Dependency-free HTTP surface for the mid-call tool API, the ElevenLabs agent
+// webhooks, and the report. Framework-free (node:http) so the app stays
+// independently runnable.
 //
-// Routes:
-//   GET  /health
-//   POST /calls                    { listing_id, listing_name?, phone? } -> session
-//   POST /calls/:id/quote          partial quote fields written mid-call
-//   GET  /calls/:id/leverage       real leverage for the Negotiator
-//   POST /calls/:id/outcome        { status, reason?, callback_at? }
-//   GET  /report                   ranked comparison + recommendation
+// Mid-call tools (agent):    POST /calls, POST /calls/:id/quote,
+//                            GET /calls/:id/leverage, POST /calls/:id/outcome
+// ElevenLabs webhooks:       POST /agent/personalization, POST /agent/post-call
+//                            (HMAC-verified when ELEVENLABS_WEBHOOK_SECRET is set)
+// Reporting (frontend):      GET /report
 
 import http from 'node:http';
 import { createNegotiationService } from './negotiation-service.js';
+import { verifyElevenLabsSignature } from './verify-signature.js';
 
 export function createServer({ requirement, benchmark } = {}) {
   const service = createNegotiationService({ requirement, benchmark });
@@ -37,15 +36,29 @@ async function route(req, res, service) {
     return send(res, 200, { ok: true });
   }
 
+  // --- ElevenLabs agent webhooks (HMAC-verified) ---
+  if (method === 'POST' && pathname === '/agent/personalization') {
+    const { raw, json } = await readBody(req);
+    if (!verifySignature(req, raw)) return send(res, 401, { error: 'invalid signature' });
+    return send(res, 200, service.personalize(json));
+  }
+
+  if (method === 'POST' && pathname === '/agent/post-call') {
+    const { raw, json } = await readBody(req);
+    if (!verifySignature(req, raw)) return send(res, 401, { error: 'invalid signature' });
+    return send(res, 200, service.ingestPostCall(json));
+  }
+
+  // --- Mid-call tool API ---
   if (method === 'POST' && pathname === '/calls') {
-    const body = await readBody(req);
-    return send(res, 201, service.startCall(body));
+    const { json } = await readBody(req);
+    return send(res, 201, service.startCall(json));
   }
 
   const quoteMatch = pathname.match(/^\/calls\/([^/]+)\/quote$/);
   if (method === 'POST' && quoteMatch) {
-    const body = await readBody(req);
-    return send(res, 200, service.writeQuoteFields(quoteMatch[1], body));
+    const { json } = await readBody(req);
+    return send(res, 200, service.writeQuoteFields(quoteMatch[1], json));
   }
 
   const leverageMatch = pathname.match(/^\/calls\/([^/]+)\/leverage$/);
@@ -55,10 +68,11 @@ async function route(req, res, service) {
 
   const outcomeMatch = pathname.match(/^\/calls\/([^/]+)\/outcome$/);
   if (method === 'POST' && outcomeMatch) {
-    const body = await readBody(req);
-    return send(res, 200, service.closeCall(outcomeMatch[1], body));
+    const { json } = await readBody(req);
+    return send(res, 200, service.closeCall(outcomeMatch[1], json));
   }
 
+  // --- Reporting ---
   if (method === 'GET' && pathname === '/report') {
     return send(res, 200, await service.report());
   }
@@ -66,16 +80,21 @@ async function route(req, res, service) {
   return send(res, 404, { error: 'not found' });
 }
 
+function verifySignature(req, raw) {
+  return verifyElevenLabsSignature(raw, req.headers['elevenlabs-signature'], process.env.ELEVENLABS_WEBHOOK_SECRET);
+}
+
+// Read the raw body once and parse JSON from it (raw is needed for HMAC verify).
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    let data = '';
+    let raw = '';
     req.on('data', (chunk) => {
-      data += chunk;
+      raw += chunk;
     });
     req.on('end', () => {
-      if (!data) return resolve({});
+      if (!raw) return resolve({ raw: '', json: {} });
       try {
-        resolve(JSON.parse(data));
+        resolve({ raw, json: JSON.parse(raw) });
       } catch {
         reject(new Error('invalid JSON body'));
       }

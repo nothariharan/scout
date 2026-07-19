@@ -1,7 +1,7 @@
 // negotiation-service.js
-// The backend service behind the mid-call tool API. Holds call sessions, the
-// confirmed-quotes store (real leverage), and every assessed quote (for the
-// report). Resolves benchmark + leverage on demand for the Negotiator.
+// The backend service behind the mid-call tool API + agent webhooks. Holds call
+// sessions, the confirmed-quotes store (real leverage), and every assessed quote
+// (for the report). Resolves benchmark + leverage on demand for the Negotiator.
 
 import { createCallSessionStore } from '../calls/call-session.js';
 import { createQuotesStore } from '../store/quotes-store.js';
@@ -11,6 +11,7 @@ import { capturePriceDrop } from '../negotiation/price-drop.js';
 import { buildLeverage } from '../leverage/leverage-builder.js';
 import { rankQuotes } from '../ranking/rank-quotes.js';
 import { generateRecommendation } from '../transcripts/recommend.js';
+import { buildInitiationData } from '../agent/initiation-data.js';
 
 /**
  * @param {object} args
@@ -40,6 +41,30 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
       ? { listing_id: session.listing_id, ...session.rawFields }
       : undefined;
     return buildLeverage({ store, benchmark, targetQuote });
+  }
+
+  /** Call-start personalization webhook: return conversation_initiation_client_data. */
+  function personalize({ call_sid } = {}) {
+    const session = call_sid ? sessions.getByCallSid(call_sid) : null;
+    return buildInitiationData(requirement, {
+      callId: session?.call_id ?? null,
+      listingId: session?.listing_id ?? null,
+    });
+  }
+
+  /** Associate an ElevenLabs conversation id with a session (post-call matching). */
+  function linkConversation(callId, conversationId) {
+    return sessions.linkConversation(callId, conversationId);
+  }
+
+  /** Post-call webhook: attach transcript evidence to the matching session. */
+  function ingestPostCall(event = {}) {
+    const data = event?.data ?? {};
+    const conversationId = data.conversation_id;
+    const session = conversationId ? sessions.getByConversationId(conversationId) : null;
+    if (!session) return { ok: true, matched: false };
+    sessions.appendTranscript(session.call_id, extractTranscript(data));
+    return { ok: true, matched: true, call_id: session.call_id };
   }
 
   /** Finalize a call into a structured outcome; assess + record the quote. */
@@ -90,5 +115,26 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
     return { ranked, recommendation, benchmark };
   }
 
-  return { startCall, writeQuoteFields, getLeverage, closeCall, report, sessions, store };
+  return {
+    startCall,
+    writeQuoteFields,
+    getLeverage,
+    personalize,
+    linkConversation,
+    ingestPostCall,
+    closeCall,
+    report,
+    sessions,
+    store,
+  };
+}
+
+// Flatten an ElevenLabs post-call transcript array into plain text.
+function extractTranscript(data) {
+  const turns = Array.isArray(data.transcript) ? data.transcript : [];
+  return turns
+    .map((turn) => turn?.message ?? turn?.text ?? '')
+    .filter(Boolean)
+    .join(' ')
+    .trim();
 }
