@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** The previous real-estate intake URL remains a safe bookmark redirect. */
+/** The original intake link is the voice-first property interview. */
 export default function IntakeRedirect() {
-  redirect("/moving");
+  redirect("/real-estate");
 }
