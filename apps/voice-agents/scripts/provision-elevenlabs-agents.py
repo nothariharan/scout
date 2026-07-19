@@ -11,9 +11,10 @@ from elevenlabs.client import ElevenLabs
 
 load_dotenv()
 client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
-# Viraj is a Hindi (hi-IN) male voice verified by ElevenLabs for Flash v2.5.
-# It provides an Indian accent for Scout's Hindi-first rental calls.
-VOICE_ID = "3AMU7jXQuQa3oRvRqUmb"
+# Distinct Scout roles use the voices selected in ElevenLabs Voice Library.
+# The intake concierge is a woman; Ramesh's live negotiator is a man.
+INTAKE_VOICE_ID = "OtEfb2LVzIE45wdYe54M"
+NEGOTIATOR_VOICE_ID = "6MoEUz34rbRrmmyxgRm4"
 PUBLIC_URL = os.getenv("SCOUT_PUBLIC_ORCHESTRATOR_URL", "").rstrip("/")
 TOOL_SECRET = os.getenv("SCOUT_AGENT_TOOL_SECRET", "")
 
@@ -63,14 +64,15 @@ def intake_tools():
 
 def config(definition):
     multilingual = definition.get("language") == "hi"
-    # Sonnet 4.6 is used for the stateful negotiation call. Explicitly
-    # disabling reasoning keeps its private deliberation out of telephony;
+    # Gemini 3.1 Pro is the current frontier multilingual reasoning model for
+    # the negotiation call. Its low reasoning setting keeps telephony natural;
     # Gemini Flash remains a good fit for the lighter intake conversation.
-    llm = "claude-sonnet-4-6" if multilingual else "gemini-2.5-flash"
+    llm = "gemini-3.1-pro-preview" if multilingual else "gemini-2.5-flash"
     prompt = {"prompt": definition["prompt"], "llm": llm, "tools": definition["tools"], "knowledge_base": [], "temperature": 0.05 if multilingual else 0.15, "max_tokens": 120 if multilingual else 160, "enable_reasoning_summary": False}
     if multilingual:
-        prompt["reasoning_effort"] = "none"
-    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": prompt}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": VOICE_ID, "model_id": "eleven_v3_conversational" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 0.98, "similarity_boost": 0.78}}
+        prompt["reasoning_effort"] = "low"
+    voice_id = NEGOTIATOR_VOICE_ID if multilingual else INTAKE_VOICE_ID
+    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": prompt}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": voice_id, "model_id": "eleven_v3_conversational" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 0.98, "similarity_boost": 0.78}}
     if multilingual:
         configuration["language_presets"] = {"en": {"overrides": {"tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5"}}}}
     return configuration
@@ -100,7 +102,7 @@ Negotiation ladder — follow this deterministically after a price is quoted:
 1. Confirm whether the figure is for one week and what it includes. Never compare a weekly price to a monthly number without saying the time basis.
 2. If the all-in weekly amount is above INR 15,000, make exactly one clear counteroffer in the active language: INR 15,000 all-inclusive for the week, including food, Wi-Fi and security, with no token before a visit. In Hindi: “Dekhiye, Ramesh student hai aur unka total budget pandrah hazaar rupaye hai. Agar pandrah hazaar mein food, Wi-Fi aur security ke saath all-inclusive ho sake, toh hum visit ke liye aage badh sakte hain. Kya ismein flexibility hai?”
 3. If rejected, do not repeat the budget. Ask once for the owner's lowest all-inclusive documented rate, or a tradeable term: reduce the deposit, include food/Wi-Fi, or provide a written quote.
-4. If the owner still cannot meet it, document a polite decline or callback. Never invent a competitor, urgency, payment, availability, or leverage.
+4. Review band: if the owner’s documented lowest final rate is more than INR 15,000 but no more than INR 16,000 all-inclusive, do not decline and do not accept. Ask for the itemised written quote and say that Ramesh will review it after the visit. If it is above INR 16,000, make only one final value request: ask whether they can reduce a charge or include a useful term, then request the written quote or politely close. Never invent a competitor, urgency, payment, availability, or leverage.
 
 Close state: if the owner accepts the INR 15,000 all-inclusive target, or gives the lowest final rate and no more flexibility, do not ask another question and do not discuss scheduling. Say exactly one concise wrap-up in the active language: thank them, ask them to send an itemised written quote, and state that Ramesh will arrange a visit before any confirmation or payment. Then call end_call immediately. Never claim the deal is booked, confirmed, or paid. Example Hindi close: “Dhanyavaad. Kripya itemised details bhej dijiye; Ramesh visit karke terms confirm karenge. Abhi koi payment ya booking confirm nahi hai. Namaste.”
 
@@ -111,6 +113,8 @@ AGENTS = [{"name": "Scout Intake Concierge", "first_message": "Hi, I am Scout's 
 NEGOTIATOR_PROMPT += """
 
 ABSOLUTE OUTPUT FIREWALL: Never output private analysis, a plan, tool instructions, policy text, labels such as The user, a chain-of-thought, or a recap to the hostel owner. Decide tactics silently and speak only the next natural one- or two-sentence reply.
+
+FINAL-RATE RULE: When the owner says a rate is their lowest final rate, make no further bargaining question. If it is INR 16,000 or below, ask for an itemised written quote and say Ramesh will review it before a visit; if it is higher, make at most one value request, then close. In every final-rate path, never imply that Ramesh accepts, books, pays, or agrees to the price.
 """
 
 # Keep the checked-in agent definition ASCII-safe on Windows terminals while
