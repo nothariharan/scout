@@ -63,7 +63,7 @@ export function QuoteTable({
                 <td className="px-3 py-3 text-right">
                   <div
                     className="mono font-medium"
-                    style={{ color: overBudget ? "var(--rust)" : "var(--ink)" }}
+                    style={{ color: overBudget ? "var(--red)" : "var(--ink)" }}
                   >
                     {inr(q.effective_monthly_cost)}
                   </div>

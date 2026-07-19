@@ -1,20 +1,26 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Apple HIG light theme. Token NAMES are kept from the original case-file theme
+   so every page re-skins without markup changes; the ROLES are remapped:
+   --ink = primary label, --rust = system tint (blue), --sage/--amber/--red =
+   semantic green/orange/red, --paper = grouped background, --line = separator. */
 :root {
-  --ink: #16233d;
-  --paper: #f3eee4;
-  --paper-2: #eae2d2;
-  --rust: #b0451f;
-  --sage: #4f6b4c;
-  --sage-bg: #e4ebe0;
-  --amber: #b4791f;
-  --amber-bg: #f3e6c9;
-  --charcoal: #2b2b28;
-  --line: #d8cfbb;
+  --ink: #1d1d1f;
+  --paper: #f5f5f7;
+  --paper-2: #e8e8ed;
+  --rust: #0071e3;
+  --rust-hover: #0077ed;
+  --sage: #1d7a3a;
+  --sage-bg: #e6f6ea;
+  --amber: #a15c00;
+  --amber-bg: #fff3e0;
+  --red: #d70015;
+  --red-bg: #feeceb;
+  --charcoal: #1d1d1f;
+  --secondary: #6e6e73;
+  --line: #d2d2d7;
 }
 
 @layer base {
@@ -24,38 +30,48 @@
     color: var(--charcoal);
   }
   body {
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+      Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   h1,
   h2,
   h3,
   h4 {
-    font-family: "Fraunces", Georgia, serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
+      Arial, sans-serif;
     color: var(--ink);
     font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--rust);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  /* Constrained case-file column. */
+  /* Constrained content column. */
   .wrap {
     max-width: 980px;
     margin-inline: auto;
-    padding-inline: 20px;
+    padding-inline: 22px;
   }
 
-  /* Thin repeating dashed divider — the "case file" seam. */
+  /* Hairline separator (was a dashed seam). */
   .wire {
     height: 1px;
     border: 0;
-    background-image: repeating-linear-gradient(
-      to right,
-      var(--line) 0,
-      var(--line) 6px,
-      transparent 6px,
-      transparent 12px
-    );
+    background: var(--line);
   }
 
   /* Numbered stage tab. */
@@ -63,20 +79,19 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 4px;
-    font-family: "IBM Plex Mono", monospace;
+    padding: 11px 4px;
     font-size: 12px;
-    letter-spacing: 0.04em;
-    color: var(--ink);
-    opacity: 0.55;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--secondary);
     border-bottom: 2px solid transparent;
-    transition: opacity 0.15s ease;
+    transition: color 0.15s ease;
   }
   .tab:hover {
-    opacity: 0.85;
+    color: var(--ink);
   }
   .tab[data-active="true"] {
-    opacity: 1;
+    color: var(--ink);
     border-bottom-color: var(--rust);
   }
   .tab .num {
@@ -87,31 +102,33 @@
     border: 1px solid var(--line);
     border-radius: 999px;
     font-size: 11px;
-    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    color: var(--secondary);
   }
   .tab[data-active="true"] .num {
     border-color: var(--rust);
-    color: var(--rust);
+    background: var(--rust);
+    color: #fff;
   }
 
-  /* Buttons. */
+  /* Pill buttons. */
   .btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     background: var(--rust);
     color: #fff;
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 13px;
-    letter-spacing: 0.02em;
-    padding: 9px 16px;
-    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    padding: 10px 20px;
+    border-radius: 980px;
     border: 1px solid var(--rust);
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    transition: background 0.15s ease;
   }
   .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px -8px rgba(176, 69, 31, 0.7);
+    background: var(--rust-hover);
+    border-color: var(--rust-hover);
   }
   .btn:disabled {
     opacity: 0.4;
@@ -122,85 +139,88 @@
     align-items: center;
     gap: 6px;
     background: transparent;
-    color: var(--ink);
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 13px;
-    padding: 9px 16px;
-    border-radius: 6px;
-    border: 1px solid var(--ink);
-    transition: background 0.12s ease;
+    color: var(--rust);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    padding: 10px 20px;
+    border-radius: 980px;
+    border: 1px solid var(--rust);
+    transition: background 0.15s ease, color 0.15s ease;
   }
   .btn-ghost:hover {
-    background: var(--paper-2);
+    background: var(--rust);
+    color: #fff;
   }
 
-  /* Cards — flat, ruled, no float. */
+  /* Cards float on the grouped background. */
   .card {
     background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 10px;
+    border: none;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   }
 
-  /* Mono status pills. */
+  /* Status chips. */
   .pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-family: "IBM Plex Mono", monospace;
     font-size: 11px;
-    letter-spacing: 0.03em;
-    padding: 3px 9px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 4px 10px;
     border-radius: 999px;
     background: var(--paper-2);
-    color: var(--ink);
-    border: 1px solid var(--line);
+    color: var(--secondary);
+    border: none;
   }
   .pill-sage {
     background: var(--sage-bg);
     color: var(--sage);
-    border-color: transparent;
   }
   .pill-amber {
     background: var(--amber-bg);
     color: var(--amber);
-    border-color: transparent;
   }
   .pill-rust {
-    background: #f4ddd3;
-    color: var(--rust);
-    border-color: transparent;
+    background: var(--red-bg);
+    color: var(--red);
   }
 
-  /* Large Fraunces numeral for ledger rows. */
+  /* Large ultralight numeral for ledger rows. */
   .call-idx {
-    font-family: "Fraunces", serif;
-    font-weight: 400;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    font-weight: 200;
     font-size: 40px;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
     color: var(--line);
   }
 
-  /* Rubber-stamp recommendation badge. */
+  /* Recommendation badge (tinted capsule, no rotation). */
   .rec-stamp {
     display: inline-block;
-    font-family: "IBM Plex Mono", monospace;
-    font-weight: 600;
     font-size: 12px;
-    letter-spacing: 0.12em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--rust);
-    border: 2px solid var(--rust);
-    border-radius: 6px;
-    padding: 6px 12px;
-    transform: rotate(-4deg);
-    opacity: 0.9;
+    background: rgba(0, 113, 227, 0.1);
+    border: none;
+    border-radius: 980px;
+    padding: 7px 14px;
   }
 
+  /* Utility faces: SF Mono for data, display stack where serif was used. */
   .mono {
-    font-family: "IBM Plex Mono", monospace;
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0;
   }
   .serif {
-    font-family: "Fraunces", serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.015em;
   }
 }
 

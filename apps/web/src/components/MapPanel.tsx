@@ -54,7 +54,7 @@ export function MapPanel({
     >
       <defs>
         <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse">
-          <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#d8cfbb" strokeWidth="1" opacity="0.6" />
+          <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#d2d2d7" strokeWidth="1" opacity="0.6" />
         </pattern>
       </defs>
       <rect width={W} height={H} fill="url(#grid)" />
@@ -67,7 +67,7 @@ export function MapPanel({
             y1={y(anchor.lat)}
             x2={x(p.lng)}
             y2={y(p.lat)}
-            stroke="#d8cfbb"
+            stroke="#d2d2d7"
             strokeWidth="1"
             strokeDasharray="3 4"
             opacity={selectedIds.has(p.listing_id) ? 0.9 : 0.4}
@@ -76,13 +76,13 @@ export function MapPanel({
 
       {target && (
         <g>
-          <circle cx={x(target.lng)} cy={y(target.lat)} r="7" fill="none" stroke="#16233d" strokeWidth="2" />
+          <circle cx={x(target.lng)} cy={y(target.lat)} r="7" fill="none" stroke="#1d1d1f" strokeWidth="2" />
           <text
             x={x(target.lng) + 11}
             y={y(target.lat) + 4}
-            fontFamily="IBM Plex Mono, monospace"
+            fontFamily="SF Mono, ui-monospace, monospace"
             fontSize="10"
-            fill="#16233d"
+            fill="#1d1d1f"
           >
             {spec.location.area}
           </text>
@@ -91,13 +91,13 @@ export function MapPanel({
 
       {anchor && (
         <g>
-          <rect x={x(anchor.lng) - 5} y={y(anchor.lat) - 5} width="10" height="10" fill="#b4791f" />
+          <rect x={x(anchor.lng) - 5} y={y(anchor.lat) - 5} width="10" height="10" fill="#ff9500" />
           <text
             x={x(anchor.lng) + 10}
             y={y(anchor.lat) + 4}
-            fontFamily="IBM Plex Mono, monospace"
+            fontFamily="SF Mono, ui-monospace, monospace"
             fontSize="10"
-            fill="#b4791f"
+            fill="#ff9500"
           >
             anchor
           </text>
@@ -113,17 +113,17 @@ export function MapPanel({
               cx={x(p.lng)}
               cy={y(p.lat)}
               r={active ? 8 : 6}
-              fill={selected ? "#b0451f" : "#c9bfa8"}
-              stroke={active ? "#16233d" : "transparent"}
+              fill={selected ? "#0071e3" : "#c7c7cc"}
+              stroke={active ? "#1d1d1f" : "transparent"}
               strokeWidth="2"
             />
             {p.commute_minutes != null && (
               <text
                 x={x(p.lng) + 10}
                 y={y(p.lat) + 4}
-                fontFamily="IBM Plex Mono, monospace"
+                fontFamily="SF Mono, ui-monospace, monospace"
                 fontSize="10"
-                fill="#2b2b28"
+                fill="#6e6e73"
               >
                 {p.commute_minutes}m
               </text>

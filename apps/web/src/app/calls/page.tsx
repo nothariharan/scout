@@ -41,7 +41,7 @@ export default function CallsPage() {
   return <div className="space-y-6">
     <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="mono text-[11px] uppercase tracking-[0.18em] text-rust">Moving pilot · truthful call ledger</p><h1 className="mt-2 text-2xl">Call activity.</h1><p className="mt-1 text-sm text-charcoal/70">{live ? `${live} live call${live === 1 ? "" : "s"}.` : `${complete} completed call${complete === 1 ? "" : "s"}; queued calls will not dial until outbound calling is enabled.`}</p></div><div className="flex items-center gap-3"><button onClick={() => void load()} className="btn-ghost">REFRESH</button><a href="/moving/report" className="btn">VIEW REPORT →</a></div></header>
     <div className="wire" />
-    {error && <p className="mono text-[11px] text-rust">{error}</p>}
+    {error && <p className="mono text-[11px] text-red">{error}</p>}
     {!error && <p className="mono text-[10px] uppercase tracking-wide text-charcoal/45">{refreshedAt ? `Last refreshed ${refreshedAt} · polling every 5 seconds` : "Connecting to orchestrator…"}</p>}
     <ol className="card divide-y divide-line">
       {loading && !calls.length && <li className="p-6 text-sm text-charcoal/60">Loading dispatched moving calls…</li>}

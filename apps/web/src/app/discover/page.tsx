@@ -112,8 +112,8 @@ export default function DiscoverPage() {
     </header>
 
     <div className="wire" />
-    {!requirementId && <p className="mono text-[11px] text-rust">No confirmed moving brief yet. <a className="underline" href="/moving">Create one first.</a></p>}
-    {error && <p className="mono text-[11px] text-rust">{error}</p>}
+    {!requirementId && <p className="mono text-[11px] text-red">No confirmed moving brief yet. <a className="underline" href="/moving">Create one first.</a></p>}
+    {error && <p className="mono text-[11px] text-red">{error}</p>}
 
     <section className="grid gap-4 md:grid-cols-3">
       <div className="card p-4"><p className="mono text-[10px] uppercase text-charcoal/50">Route</p><p className="mt-2 text-sm">{origin} → {destination}</p></div>

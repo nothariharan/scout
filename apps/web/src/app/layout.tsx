@@ -12,23 +12,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        {/* Ink header strip: name + one subline only. */}
-        <header style={{ background: "var(--ink)" }}>
-          <div className="wrap flex items-baseline justify-between py-4">
-            <a href="/" className="flex items-baseline gap-3">
-              <span className="serif text-2xl font-semibold text-white">Scout</span>
-              <span className="mono text-[11px] uppercase tracking-widest text-white/45">
-                case file · negotiation
+        {/* Frosted, translucent chrome: brand row + stage tabs over one blur. */}
+        <div
+          className="sticky top-0 z-40 border-b border-line"
+          style={{
+            background: "rgba(251, 251, 253, 0.8)",
+            backdropFilter: "saturate(180%) blur(20px)",
+            WebkitBackdropFilter: "saturate(180%) blur(20px)",
+          }}
+        >
+          <header>
+            <div className="wrap flex items-baseline justify-between py-3">
+              <a href="/" className="flex items-baseline gap-3">
+                <span className="text-xl font-semibold tracking-tight text-ink">Scout</span>
+                <span className="text-[11px] font-medium text-secondary">
+                  Case file · Negotiation
+                </span>
+              </a>
+              <span className="hidden text-[11px] text-secondary sm:block">
+                Moving pilot · AI buying agent
               </span>
-            </a>
-            <span className="mono hidden text-[11px] text-white/40 sm:block">
-              moving pilot · AI buying agent
-            </span>
-          </div>
-        </header>
-
-        {/* Paper tab strip. */}
-        <div style={{ background: "var(--paper-2)" }} className="border-b border-line">
+            </div>
+          </header>
           <div className="wrap">
             <StageNav />
           </div>
@@ -38,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <footer className="wrap pb-12 pt-4">
           <div className="wire mb-4" />
-          <p className="mono text-[11px] leading-relaxed text-charcoal/55">
+          <p className="text-[11px] leading-relaxed text-secondary">
             Scout discloses it is an AI on every call and cannot pay, sign, or commit — terms are
             subject to your confirmation. Built for the ElevenLabs × Hack-Nation Negotiator
             challenge.
