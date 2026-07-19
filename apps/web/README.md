@@ -37,8 +37,10 @@ No API keys are required to render the demo flow. The wiring points for live
 services (all read from an untracked `.env`, see repo `.env.example`):
 
 - `ELEVENLABS_INTAKE_AGENT_ID` — mounts the intake-concierge widget on `/intake`.
-- `ELEVENLABS_NEGOTIATOR_AGENT_ID` + `TELEPHONY_*` — real outbound calls; the
-  SSE route then relays provider webhook events instead of replaying seed calls.
+- `ELEVENLABS_NEGOTIATOR_AGENT_ID` + `ELEVENLABS_AGENT_PHONE_NUMBER_ID` —
+  real outbound calls through ElevenLabs. They remain disabled until
+  `OUTBOUND_CALLS_ENABLED=true`; the SSE route then relays provider webhook
+  events instead of replaying seed calls.
 - `MAPS_API_KEY` — swaps the SVG map placeholder for a real tile layer (props
   stay the same).
 
