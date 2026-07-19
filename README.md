@@ -11,7 +11,7 @@ live product · real outbound calls · verified leverage only · never invents c
 
 ### product walkthrough
 
-https://github.com/user-attachments/assets/37ed5a8d-6ff8-4510-a255-8511ee6862ab
+https://github.com/user-attachments/assets/6e9e3f45-527b-4dd4-902d-d524af36a0e8
 
 <!-- Legacy repository-file links are intentionally hidden. GitHub renders the
 native attachment URLs below as in-page media players. -->
@@ -67,7 +67,7 @@ https://github.com/user-attachments/files/30166025/negotiation-call-1-conv_5201k
 <details>
 <summary>▶ Play video and listen to the negotiation</summary>
 
-https://github.com/user-attachments/assets/6e9e3f45-527b-4dd4-902d-d524af36a0e8
+https://github.com/user-attachments/assets/37ed5a8d-6ff8-4510-a255-8511ee6862ab
 
 https://github.com/user-attachments/files/30166024/negotiation-call-2-conv_9401kxx51dk6fxgveay6375kr57n.mp3
 
