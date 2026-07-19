@@ -37,6 +37,8 @@ const ALLOWED_FIELDS = new Set([
   'quote_status',
   'risk_signals',
   'counter_rounds',
+  'labor', 'materials', 'transport', 'demolition_prep', 'permits_taxes', 'other_fees',
+  'warranty_months', 'timeline_days', 'scope_complete', 'exclusions',
 ]);
 
 export function createCallSessionStore({ prefix = 'call' } = {}) {

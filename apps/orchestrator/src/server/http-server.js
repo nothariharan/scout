@@ -17,6 +17,7 @@ import http from 'node:http';
 import { EventEmitter } from 'node:events';
 import { createNegotiationService } from './negotiation-service.js';
 import { createMovingNegotiationService } from '../moving/moving-negotiation-service.js';
+import { createRenovationNegotiationService } from '../renovation/renovation-negotiation-service.js';
 import { planNegotiation } from '../negotiation/strategy-engine.js';
 import { discoverCandidates } from '../discovery/places-client.js';
 import { createRequirementStore } from '../requests/requirement-store.js';
@@ -43,6 +44,7 @@ export function createServer({ requirement, benchmark, discovery = discoverCandi
 }
 
 function createWorkflowService(spec, benchmark, idPrefix) {
+  if (spec?.vertical === 'home_renovation') return createRenovationNegotiationService({ request: spec, idPrefix: `renovation_${idPrefix ?? 'call'}` });
   return spec?.vertical === 'moving'
     ? createMovingNegotiationService({ request: spec, benchmark, idPrefix: `moving_${idPrefix ?? 'call'}` })
     : createNegotiationService({ requirement: spec, benchmark });
@@ -142,7 +144,7 @@ async function route(req, res, context) {
     if (!record.confirmed_at) return send(res, 409, { error: 'confirm the requirement before discovery' });
     const body = await readBody(req);
     const isMoving = record.spec.vertical === 'moving';
-    const serviceType = body.service_type ?? (isMoving ? 'moving' : record.spec.deal_type === 'hostel' ? 'hostel' : 'property_agent');
+    const serviceType = body.service_type ?? (isMoving ? 'moving' : record.spec.vertical === 'home_renovation' ? 'contractor' : record.spec.deal_type === 'hostel' ? 'hostel' : 'property_agent');
     const result = await discovery({ location: record.spec.origin ?? record.spec.location, serviceType, radiusMeters: body.radius_meters, limit: body.limit });
     if (!isMoving && record.spec.location) {
       const liveBenchmark = await benchmarkService.getBenchmark(record.spec.location, record.spec.deal_type);

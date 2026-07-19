@@ -11,6 +11,7 @@ const SEARCH_TERMS = {
   hostel: 'hostel|pg|paying guest|coliving|co-living',
   rental_apartment: 'apartment|flat|residential|real estate|property',
   property_agent: 'real estate|property agent|broker|estate agent',
+  contractor: 'contractor|painter|waterproofing|tiling|interior|carpenter|renovation',
   home_services: 'plumber|electrician|cleaning|pest control',
 };
 
