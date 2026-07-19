@@ -1,14 +1,15 @@
 // @scout/vertical-config - public entrypoint.
-// Loads the swappable real-estate config as data. Uses createRequire so JSON
-// loading works across Node versions without import-assertion syntax.
+// Loads swappable vertical profiles as data. Uses createRequire so JSON loading
+// works across Node versions without import-assertion syntax.
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const config = require('./vertical.config.json');
+const legacyRealEstate = require('./vertical.config.json');
 const moving = require('./profiles/moving.config.json');
+const config = legacyRealEstate;
 
 const profiles = Object.freeze({
-  [config.vertical_name]: config,
+  [legacyRealEstate.vertical_name]: legacyRealEstate,
   [moving.vertical_name]: moving,
 });
 
@@ -16,8 +17,8 @@ export default config;
 
 /**
  * Resolve product behavior from configuration, not from a vertical-specific
- * branch of orchestrator code. The existing real-estate profile remains the
- * default while Moving is the hackathon demo profile.
+ * branch of orchestrator code. The default remains compatible with the legacy
+ * package API; the moving product path always requests the `moving` profile.
  */
 export function getVerticalProfile(name = config.vertical_name) {
   const profile = profiles[name];
