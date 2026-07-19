@@ -9,6 +9,10 @@ live product · real outbound calls · verified leverage only · never invents c
 
 ## demo (start here)
 
+### product walkthrough
+
+https://github.com/user-attachments/assets/37ed5a8d-6ff8-4510-a255-8511ee6862ab
+
 <!-- Legacy repository-file links are intentionally hidden. GitHub renders the
 native attachment URLs below as in-page media players. -->
 <!--
@@ -43,18 +47,9 @@ bundle: [`negotiation-audio.zip`](media/demo/negotiation-audio.zip)
 
 | Evidence | Conversation | Video | Audio | What it shows |
 | --- | --- | --- | --- | --- |
-| Product walkthrough | — | [Open inline player](#product-walkthrough) | — | Confirmed property brief → discovery → parallel negotiation → evidence-backed recommendation |
+| Product walkthrough | — | Playing above | — | Confirmed property brief → discovery → parallel negotiation → evidence-backed recommendation |
 | Negotiation call 1 | `conv_5201kxx76rwvebfb1s430ve2nm5h` | [Open inline player](#negotiation-call-1) | [Listen](#negotiation-call-1) | Hindi-first hostel availability, scope, and price discussion |
 | Negotiation call 2 | `conv_9401kxx51dk6fxgveay6375kr57n` | [Open inline player](#negotiation-call-2) | [Listen](#negotiation-call-2) | Bounded, truthful India-hostel negotiation and clean close |
-
-### product walkthrough
-
-<details>
-<summary>▶ Play the full product walkthrough</summary>
-
-https://github.com/user-attachments/assets/37ed5a8d-6ff8-4510-a255-8511ee6862ab
-
-</details>
 
 ### negotiation call 1
 
