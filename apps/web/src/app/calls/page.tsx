@@ -27,7 +27,12 @@ export default function CallsPage() {
   useEffect(() => {
     void load();
     const timer = window.setInterval(() => void load(), 5000);
-    return () => window.clearInterval(timer);
+    const events = new EventSource("/api/orchestrator/events");
+    events.onmessage = () => void load();
+    // Polling remains a fallback for a local server restart or an SSE proxy
+    // that a restrictive deployment platform does not keep open.
+    events.onerror = () => events.close();
+    return () => { window.clearInterval(timer); events.close(); };
   }, [load]);
 
   const live = calls.filter((call) => call.state === "in_progress").length;

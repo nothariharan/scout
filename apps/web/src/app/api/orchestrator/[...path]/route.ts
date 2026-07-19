@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const ALLOWED_ROOTS = new Set(["health", "calls", "report", "strategy", "requirements"]);
+const ALLOWED_ROOTS = new Set(["health", "calls", "events", "report", "strategy", "requirements"]);
 
 type Context = { params: { path: string[] } };
 
@@ -47,6 +47,12 @@ async function proxy(request: NextRequest, { params }: Context) {
       cache: "no-store",
     });
     const contentType = upstream.headers.get("content-type") ?? "application/json";
+    if (root === "events" && request.method === "GET") {
+      return new Response(upstream.body, {
+        status: upstream.status,
+        headers: { "content-type": contentType, "cache-control": "no-cache, no-transform", connection: "keep-alive" },
+      });
+    }
     return new Response(await upstream.text(), {
       status: upstream.status,
       headers: { "content-type": contentType, "cache-control": "no-store" },
