@@ -393,6 +393,26 @@
   }
 }
 
+/* Pipeline state cards: idle -> active (indigo ring) -> done (calm). */
+.state-card {
+  opacity: 0.62;
+  transition: opacity 0.35s ease, box-shadow 0.35s ease;
+}
+.state-card.is-active {
+  opacity: 1;
+  box-shadow:
+    0 0 0 2px rgba(94, 92, 230, 0.65),
+    0 12px 36px rgba(70, 60, 130, 0.18),
+    inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.9);
+}
+.state-card.is-done {
+  opacity: 0.9;
+}
+.state-card.is-done h3::after {
+  content: " ✓";
+  color: var(--sage);
+}
+
 /* Agent-presence blob: soft iridescent morphing orb. */
 .demo-blob {
   display: inline-block;
