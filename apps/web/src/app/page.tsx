@@ -20,7 +20,7 @@ export default function Home() {
           <a href="/moving" className="btn">
             START INTAKE →
           </a>
-          <a href="/report/req_demo_koramangala_pg" className="btn-ghost">
+          <a href="/moving/report" className="btn-ghost">
             SEE A REPORT
           </a>
         </div>
