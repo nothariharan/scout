@@ -1,23 +1,24 @@
 import type { Config } from "tailwindcss";
 
-// Apple HIG light palette. Mirrors the CSS tokens in globals.css (:root); the
-// original token names are kept so existing page classes re-theme in place:
-// ink = primary label, rust = system tint (blue), sage/amber/red = semantics.
+// "Frozen water" glass palette. Mirrors the CSS tokens in globals.css; original
+// token names are kept so existing page classes re-theme in place: ink =
+// deep-water label, rust = glacial tint (blue), sage/amber/red = semantics,
+// paper/paper2 = frost fill tints, line = frost hairline.
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#1d1d1f",
-        paper: { DEFAULT: "#f5f5f7", "2": "#e8e8ed" },
-        paper2: "#e8e8ed",
+        ink: "#07253a",
+        paper: { DEFAULT: "rgba(255,255,255,0.35)", "2": "rgba(255,255,255,0.50)" },
+        paper2: "rgba(255,255,255,0.50)",
         rust: "#0071e3",
-        sage: { DEFAULT: "#1d7a3a", bg: "#e6f6ea" },
-        amber: { DEFAULT: "#a15c00", bg: "#fff3e0" },
-        red: { DEFAULT: "#d70015", bg: "#feeceb" },
-        charcoal: "#1d1d1f",
-        secondary: "#6e6e73",
-        line: "#d2d2d7",
+        sage: { DEFAULT: "#157f3d", bg: "rgba(52,199,89,0.18)" },
+        amber: { DEFAULT: "#b25000", bg: "rgba(255,159,10,0.20)" },
+        red: { DEFAULT: "#d70015", bg: "rgba(255,59,48,0.14)" },
+        charcoal: "#0c2b40",
+        secondary: "rgba(12,43,64,0.58)",
+        line: "rgba(12,43,64,0.14)",
       },
       fontFamily: {
         serif: [

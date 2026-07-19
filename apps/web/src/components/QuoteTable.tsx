@@ -42,7 +42,7 @@ export function QuoteTable({
                 key={q.listing_id}
                 style={{
                   borderBottom: "1px solid var(--line)",
-                  background: top ? "var(--sage-bg)" : "#fff",
+                  background: top ? "var(--sage-bg)" : "transparent",
                 }}
               >
                 <td className="mono px-3 py-3 text-charcoal/45">{i + 1}</td>

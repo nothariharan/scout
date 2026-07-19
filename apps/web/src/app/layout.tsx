@@ -12,30 +12,35 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        {/* Frosted, translucent chrome: brand row + stage tabs over one blur. */}
-        <div
-          className="sticky top-0 z-40 border-b border-line"
-          style={{
-            background: "rgba(251, 251, 253, 0.8)",
-            backdropFilter: "saturate(180%) blur(20px)",
-            WebkitBackdropFilter: "saturate(180%) blur(20px)",
-          }}
-        >
-          <header>
-            <div className="wrap flex items-baseline justify-between py-3">
-              <a href="/" className="flex items-baseline gap-3">
-                <span className="text-xl font-semibold tracking-tight text-ink">Scout</span>
-                <span className="text-[11px] font-medium text-secondary">
-                  Case file · Negotiation
+        {/* Floating glass menu bar: brand row + stage tabs in one window. */}
+        <div className="sticky top-3 z-40 px-3">
+          <div
+            className="mx-auto max-w-[996px] rounded-2xl border px-3"
+            style={{
+              background: "rgba(255, 255, 255, 0.55)",
+              borderColor: "rgba(255, 255, 255, 0.8)",
+              backdropFilter: "saturate(180%) blur(24px)",
+              WebkitBackdropFilter: "saturate(180%) blur(24px)",
+              boxShadow:
+                "0 12px 40px rgba(24, 70, 110, 0.18), inset 0 1px 0 rgba(255,255,255,0.9)",
+            }}
+          >
+            <header>
+              <div className="flex items-baseline justify-between px-2 pb-1 pt-3">
+                <a href="/" className="flex items-baseline gap-3">
+                  <span className="text-xl font-semibold tracking-tight text-ink">Scout</span>
+                  <span className="text-[11px] font-medium text-secondary">
+                    Case file · Negotiation
+                  </span>
+                </a>
+                <span className="hidden text-[11px] text-secondary sm:block">
+                  Moving pilot · AI buying agent
                 </span>
-              </a>
-              <span className="hidden text-[11px] text-secondary sm:block">
-                Moving pilot · AI buying agent
-              </span>
+              </div>
+            </header>
+            <div className="px-1 pb-2">
+              <StageNav />
             </div>
-          </header>
-          <div className="wrap">
-            <StageNav />
           </div>
         </div>
 

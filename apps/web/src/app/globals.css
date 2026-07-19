@@ -2,34 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Apple HIG light theme. Token NAMES are kept from the original case-file theme
-   so every page re-skins without markup changes; the ROLES are remapped:
-   --ink = primary label, --rust = system tint (blue), --sage/--amber/--red =
-   semantic green/orange/red, --paper = grouped background, --line = separator. */
+/* "Frozen water" glass OS theme: a bright glacial wallpaper with white
+   frost-glass panels and deep-water ink text. Token NAMES are kept from the
+   original theme so every page re-skins without markup changes; ROLES:
+   --ink = deep-water label, --rust = glacial tint (blue), --sage/--amber/--red
+   = semantics, --line = frost hairline, --paper/--paper-2 = frost fill tints. */
 :root {
-  --ink: #1d1d1f;
-  --paper: #f5f5f7;
-  --paper-2: #e8e8ed;
+  color-scheme: light;
+  --ink: #07253a;
+  --paper: rgba(255, 255, 255, 0.35);
+  --paper-2: rgba(255, 255, 255, 0.5);
   --rust: #0071e3;
-  --rust-hover: #0077ed;
-  --sage: #1d7a3a;
-  --sage-bg: #e6f6ea;
-  --amber: #a15c00;
-  --amber-bg: #fff3e0;
+  --rust-hover: #1683f0;
+  --sage: #157f3d;
+  --sage-bg: rgba(52, 199, 89, 0.18);
+  --amber: #b25000;
+  --amber-bg: rgba(255, 159, 10, 0.2);
   --red: #d70015;
-  --red-bg: #feeceb;
-  --charcoal: #1d1d1f;
-  --secondary: #6e6e73;
-  --line: #d2d2d7;
+  --red-bg: rgba(255, 59, 48, 0.14);
+  --charcoal: #0c2b40;
+  --secondary: rgba(12, 43, 64, 0.58);
+  --line: rgba(12, 43, 64, 0.14);
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.75);
 }
 
 @layer base {
-  html,
-  body {
-    background: var(--paper);
-    color: var(--charcoal);
+  html {
+    background: #dfeaf3;
   }
+  /* The "desktop": a fixed glacial-ice wallpaper the frost glass sits over. */
   body {
+    min-height: 100vh;
+    color: var(--charcoal);
+    background:
+      radial-gradient(1100px 700px at 10% -10%, rgba(255, 255, 255, 0.9), transparent 58%),
+      radial-gradient(950px 640px at 90% 6%, rgba(148, 200, 238, 0.55), transparent 60%),
+      radial-gradient(1000px 760px at 24% 112%, rgba(88, 160, 214, 0.45), transparent 62%),
+      radial-gradient(760px 560px at 72% 92%, rgba(174, 226, 240, 0.5), transparent 60%),
+      linear-gradient(168deg, #eef6fb 0%, #d8e8f4 44%, #bfd9ec 100%);
+    background-attachment: fixed;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
       Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -44,10 +56,16 @@
     font-weight: 600;
     letter-spacing: -0.015em;
   }
+  ::placeholder {
+    color: rgba(12, 43, 64, 0.38);
+  }
+  ::selection {
+    background: rgba(0, 113, 227, 0.25);
+  }
   :focus-visible {
     outline: 2px solid var(--rust);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -67,68 +85,78 @@
     padding-inline: 22px;
   }
 
-  /* Hairline separator (was a dashed seam). */
+  /* Frost hairline separator. */
   .wire {
     height: 1px;
     border: 0;
-    background: var(--line);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(12, 43, 64, 0.2) 18%,
+      rgba(12, 43, 64, 0.2) 82%,
+      transparent
+    );
   }
 
-  /* Numbered stage tab. */
+  /* Numbered stage tab (frost segmented feel). */
   .tab {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 11px 4px;
+    padding: 8px 12px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 500;
     letter-spacing: -0.01em;
     color: var(--secondary);
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s ease;
+    border-bottom: 0;
+    transition: color 0.15s ease, background 0.15s ease;
   }
   .tab:hover {
     color: var(--ink);
+    background: rgba(255, 255, 255, 0.55);
   }
   .tab[data-active="true"] {
     color: var(--ink);
-    border-bottom-color: var(--rust);
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 2px 8px rgba(30, 80, 120, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
   .tab .num {
     display: inline-grid;
     place-items: center;
     width: 22px;
     height: 22px;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(12, 43, 64, 0.22);
     border-radius: 999px;
     font-size: 11px;
     font-variant-numeric: tabular-nums;
     color: var(--secondary);
   }
   .tab[data-active="true"] .num {
-    border-color: var(--rust);
+    border-color: transparent;
     background: var(--rust);
     color: #fff;
   }
 
-  /* Pill buttons. */
+  /* Glacial pill buttons. */
   .btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--rust);
+    background: linear-gradient(180deg, #1d86f0, #0071e3);
     color: #fff;
     font-size: 14px;
     font-weight: 500;
     letter-spacing: -0.01em;
     padding: 10px 20px;
     border-radius: 980px;
-    border: 1px solid var(--rust);
-    transition: background 0.15s ease;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 8px 22px rgba(0, 113, 227, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: filter 0.15s ease, transform 0.12s ease;
   }
   .btn:hover {
-    background: var(--rust-hover);
-    border-color: var(--rust-hover);
+    filter: brightness(1.06);
+    transform: translateY(-1px);
   }
   .btn:disabled {
     opacity: 0.4;
@@ -138,30 +166,44 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: transparent;
-    color: var(--rust);
+    background: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    color: var(--ink);
     font-size: 14px;
     font-weight: 500;
     letter-spacing: -0.01em;
     padding: 10px 20px;
     border-radius: 980px;
-    border: 1px solid var(--rust);
-    transition: background 0.15s ease, color 0.15s ease;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 14px rgba(30, 80, 120, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: background 0.15s ease;
   }
   .btn-ghost:hover {
-    background: var(--rust);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.8);
   }
 
-  /* Cards float on the grouped background. */
+  /* Frost-glass window panel. */
   .card {
-    background: #fff;
-    border: none;
-    border-radius: 18px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    box-shadow: 0 14px 44px rgba(24, 70, 110, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
-  /* Status chips. */
+  /* Deep-water panel for hero/emphasis (dark glass under the ice). */
+  .glass-deep {
+    background: rgba(7, 37, 58, 0.82);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    backdrop-filter: blur(32px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 22px;
+    box-shadow: 0 24px 60px rgba(10, 40, 66, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+
+  /* Status chips (tinted frost). */
   .pill {
     display: inline-flex;
     align-items: center;
@@ -171,21 +213,24 @@
     letter-spacing: 0.02em;
     padding: 4px 10px;
     border-radius: 999px;
-    background: var(--paper-2);
+    background: rgba(255, 255, 255, 0.6);
     color: var(--secondary);
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.8);
   }
   .pill-sage {
     background: var(--sage-bg);
     color: var(--sage);
+    border-color: rgba(52, 199, 89, 0.3);
   }
   .pill-amber {
     background: var(--amber-bg);
     color: var(--amber);
+    border-color: rgba(255, 159, 10, 0.32);
   }
   .pill-rust {
     background: var(--red-bg);
     color: var(--red);
+    border-color: rgba(255, 59, 48, 0.28);
   }
 
   /* Large ultralight numeral for ledger rows. */
@@ -195,24 +240,24 @@
     font-size: 40px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    color: var(--line);
+    color: rgba(12, 43, 64, 0.28);
   }
 
-  /* Recommendation badge (tinted capsule, no rotation). */
+  /* Recommendation badge (glacial capsule). */
   .rec-stamp {
     display: inline-block;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--rust);
-    background: rgba(0, 113, 227, 0.1);
-    border: none;
+    color: #005bb8;
+    background: rgba(0, 113, 227, 0.14);
+    border: 1px solid rgba(0, 113, 227, 0.3);
     border-radius: 980px;
     padding: 7px 14px;
   }
 
-  /* Utility faces: SF Mono for data, display stack where serif was used. */
+  /* Utility faces. */
   .mono {
     font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
     letter-spacing: 0;
@@ -245,7 +290,7 @@
   height: 8px;
 }
 .scroll-quiet::-webkit-scrollbar-thumb {
-  background: var(--line);
+  background: rgba(12, 43, 64, 0.25);
   border-radius: 999px;
 }
 .scroll-quiet::-webkit-scrollbar-track {
