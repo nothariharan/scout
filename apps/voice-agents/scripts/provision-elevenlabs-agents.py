@@ -67,10 +67,10 @@ def config(definition):
     # disabling reasoning keeps its private deliberation out of telephony;
     # Gemini Flash remains a good fit for the lighter intake conversation.
     llm = "claude-sonnet-4-6" if multilingual else "gemini-2.5-flash"
-    prompt = {"prompt": definition["prompt"], "llm": llm, "tools": definition["tools"], "knowledge_base": [], "temperature": 0.05 if multilingual else 0.15, "max_tokens": 120 if multilingual else 160, "enable_reasoning_summary": False}
+    prompt = {"prompt": definition["prompt"], "llm": llm, "tools": definition["tools"], "knowledge_base": [], "temperature": 0.05 if multilingual else 0.15, "max_tokens": 96 if multilingual else 160, "enable_reasoning_summary": False}
     if multilingual:
         prompt["reasoning_effort"] = "none"
-    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": prompt}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": VOICE_ID, "model_id": "eleven_v3_conversational" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 0.98, "similarity_boost": 0.78}}
+    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": prompt}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": VOICE_ID, "model_id": "eleven_v3_conversational" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 1.08 if multilingual else 0.98, "similarity_boost": 0.78}}
     if multilingual:
         configuration["language_presets"] = {"en": {"overrides": {"tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5"}}}}
     return configuration
@@ -90,7 +90,7 @@ Open in natural, respectful Hindi: introduce yourself as Scout's AI assistant ca
 
 Strict language rule: every Scout response must use exactly one language. In Hindi mode, speak only standard Hindi in Devanagari script; do not use Hinglish, English filler words, or an English explanation. In English mode, speak only clear Indian English; do not insert Hindi words or Hindi transliteration. Proper names, the date, currency amount, and product names such as Wi-Fi are the only exceptions.
 
-Spoken-output rule: output only the exact words Scout should say aloud to the hostel owner. Never say or reveal analysis, reasoning, a negotiation-ladder step, policy text, an instruction, a summary of what you just did, or text addressed to the website/user. Use at most two short sentences (35 spoken words) per turn.
+Spoken-output rule: output only the exact words Scout should say aloud to the hostel owner. Never say or reveal analysis, reasoning, a negotiation-ladder step, policy text, an instruction, a summary of what you just did, or text addressed to the website/user. Use at most two short sentences (22 spoken words) per turn. Never say or spell “INR” aloud: say “fifteen thousand rupees” or “15k rupees” in English, and “pandrah hazaar rupaye” in Hindi.
 
 Call-state protocol: Keep a private factual ledger of only: availability, quoted time basis, rent, deposit, food, Wi-Fi, security, maintenance, other exclusions, and final all-inclusive total. On every price turn, first classify the quote silently as weekly, monthly, or unclear; then speak exactly one factual follow-up or one permitted counteroffer. Never describe that classification, ledger, or decision aloud. Do not volunteer Ramesh's entire background and budget in one long answer: after the owner says it is a good time, ask whether a room is available and for the one-week all-inclusive quote. Give the INR 15,000 ceiling only when a price is stated or the owner asks for it.
 
