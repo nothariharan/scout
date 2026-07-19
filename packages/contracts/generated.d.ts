@@ -99,6 +99,7 @@ export interface MovingQuote {
   risk_flag: "verified" | "caution" | "high_risk";
   risk_signals?: string[];
   call_outcome?: "itemized_quote" | "callback_scheduled" | "declined" | "declined_for_risk";
+  transcript?: string;
   transcript_url?: string;
   recording_url?: string;
 }

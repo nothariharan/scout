@@ -25,6 +25,7 @@
     "risk_flag": { "type": "string", "enum": ["verified", "caution", "high_risk"] },
     "risk_signals": { "type": "array", "items": { "type": "string" } },
     "call_outcome": { "type": "string", "enum": ["itemized_quote", "callback_scheduled", "declined", "declined_for_risk"] },
+    "transcript": { "type": "string" },
     "transcript_url": { "type": "string" },
     "recording_url": { "type": "string" }
   }

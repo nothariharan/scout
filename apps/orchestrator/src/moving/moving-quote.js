@@ -22,6 +22,7 @@ export function normalizeMovingQuote(raw = {}) {
     risk_flag: riskSignals.includes('hostage_load_risk') ? 'high_risk' : riskSignals.length ? 'caution' : 'verified',
     risk_signals: riskSignals,
     call_outcome: raw.call_outcome ?? 'itemized_quote',
+    transcript: String(raw.transcript ?? raw.transcript_append ?? ''),
     transcript_url: raw.transcript_url ?? '',
     recording_url: raw.recording_url ?? '',
   };

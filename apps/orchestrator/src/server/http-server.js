@@ -186,7 +186,7 @@ async function route(req, res, context) {
       emit(bus, 'call_started', { call_id: session.call_id, listing_id: candidate.listing_id, listing_name: candidate.listing_name, state: session.state });
       if (!candidate.phone) return { call_id: session.call_id, listing_id: candidate.listing_id, placed: false, reason: 'candidate has no published phone number' };
       const strategy = workflow.getStrategy(session.call_id, { vertical: candidate.service_type ?? 'moving' });
-      const result = await callProvider({ to: candidate.phone, metadata: { call_id: session.call_id, strategy_brief: strategy.next_action.verbalization, verified_leverage: JSON.stringify(strategy.verified_leverage ?? []) } });
+      const result = await callProvider({ to: candidate.phone, metadata: callMetadata({ callId: session.call_id, request: record.spec, strategy }) });
       workflow.sessions.setProvider(session.call_id, { provider_conversation_id: result.conversationId, provider_call_sid: result.sid, state: result.placed ? 'in_progress' : 'queued' });
       return { call_id: session.call_id, listing_id: candidate.listing_id, ...result };
     }));
@@ -202,9 +202,17 @@ async function route(req, res, context) {
     const workflow = [...services.values()].find((candidate) => candidate.sessions.findByConversation(conversationId));
     const session = workflow?.sessions.findByConversation(conversationId);
     if (!workflow || !session) return send(res, 202, { accepted: true, matched: false });
-    const transcript = event.transcript ?? event.data?.transcript;
-    if (typeof transcript === 'string') workflow.writeQuoteFields(session.call_id, { transcript_append: transcript });
-    if (event.status === 'completed' || event.type === 'post_call_transcription') workflow.closeCall(session.call_id, { status: 'callback_required', reason: 'provider call completed; quote extraction pending' });
+    const transcript = transcriptFromEvent(event);
+    const evidence = evidenceFromEvent(event);
+    if (transcript || evidence.transcript_url || evidence.recording_url) {
+      workflow.writeQuoteFields(session.call_id, { ...(transcript ? { transcript_append: transcript } : {}), ...evidence });
+      emit(bus, 'quote_updated', { call_id: session.call_id, listing_id: session.listing_id, rawFields: workflow.sessions.get(session.call_id)?.rawFields ?? {} });
+    }
+    if ((event.status === 'completed' || event.type === 'post_call_transcription') && session.state !== 'completed') {
+      const outcome = providerOutcome(event, workflow.sessions.get(session.call_id));
+      const result = workflow.closeCall(session.call_id, outcome);
+      emit(bus, 'call_closed', { call_id: session.call_id, listing_id: session.listing_id, outcome, quote: result.quote ?? null });
+    }
     return send(res, 200, { accepted: true, matched: true });
   }
 
@@ -314,4 +322,46 @@ function createManualCandidate(input = {}, existing = []) {
     source: 'manual_consented_test',
     address: String(input.address ?? 'Manually supplied test contact').trim(),
   };
+}
+
+function callMetadata({ callId, request = {}, strategy = {} }) {
+  const origin = [request.origin?.area, request.origin?.city].filter(Boolean).join(', ');
+  const destination = [request.destination?.area, request.destination?.city].filter(Boolean).join(', ');
+  const scope = {
+    origin, destination, move_date: request.move_date ?? '', home_size: request.home_size ?? '',
+    inventory_notes: request.inventory_notes ?? '', services: request.services ?? {}, stairs: request.stairs ?? {},
+    ideal_budget: request.budget?.ideal ?? '', hard_ceiling: request.budget?.ceiling ?? '', currency: request.budget?.currency ?? '',
+  };
+  return {
+    call_id: callId,
+    moving_scope: JSON.stringify(scope),
+    origin, destination, move_date: String(scope.move_date), home_size: String(scope.home_size),
+    inventory_notes: String(scope.inventory_notes), budget_ideal: String(scope.ideal_budget), budget_ceiling: String(scope.hard_ceiling), currency: String(scope.currency),
+    strategy_brief: strategy.next_action?.verbalization_brief ?? strategy.next_action?.verbalization ?? 'Collect an itemized quote without pressure.',
+    verified_leverage: JSON.stringify(strategy.verified_leverage ?? []),
+  };
+}
+
+function transcriptFromEvent(event = {}) {
+  const transcript = event.transcript ?? event.data?.transcript ?? event.data?.conversation?.transcript;
+  if (typeof transcript === 'string') return transcript;
+  if (!Array.isArray(transcript)) return '';
+  return transcript.map((line) => typeof line === 'string' ? line : [line.role ?? line.speaker, line.message ?? line.text ?? line.content].filter(Boolean).join(': ')).filter(Boolean).join('\n');
+}
+
+function evidenceFromEvent(event = {}) {
+  const data = event.data ?? event;
+  return {
+    transcript_url: data.transcript_url ?? data.transcriptUrl ?? data.conversation?.transcript_url,
+    recording_url: data.recording_url ?? data.recordingUrl ?? data.audio_url ?? data.conversation?.recording_url,
+  };
+}
+
+function providerOutcome(event = {}, session = {}) {
+  const supplied = event.outcome?.status ?? event.data?.outcome?.status;
+  if (['itemized_quote', 'callback_scheduled', 'declined'].includes(supplied)) {
+    return { status: supplied, ...(event.outcome?.reason || event.data?.outcome?.reason ? { reason: event.outcome?.reason ?? event.data?.outcome?.reason } : {}), ...(event.outcome?.callback_at || event.data?.outcome?.callback_at ? { callback_at: event.outcome?.callback_at ?? event.data?.outcome?.callback_at } : {}) };
+  }
+  if (session?.rawFields?.base_price != null || session?.rawFields?.binding_total != null) return { status: 'itemized_quote' };
+  return { status: 'callback_scheduled', reason: 'Provider call completed without an itemized quote; a reviewed follow-up is required.' };
 }

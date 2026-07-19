@@ -43,7 +43,9 @@ export async function placeCall({ to, agentId, metadata } = {}) {
       agent_id: resolvedAgentId,
       agent_phone_number_id: phoneNumberId,
       to_number: to,
-      call_recording_enabled: false,
+      // Explicit consent gate: recordings are retained only when the deployed
+      // environment enables them and local recording rules are satisfied.
+      call_recording_enabled: process.env.CALL_RECORDING_ENABLED === 'true',
       ...(metadata && Object.keys(metadata).length > 0
         ? { conversation_initiation_client_data: { dynamic_variables: metadata } }
         : {}),
