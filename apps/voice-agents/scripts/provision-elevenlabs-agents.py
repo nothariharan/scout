@@ -63,7 +63,11 @@ def intake_tools():
 
 def config(definition):
     multilingual = definition.get("language") == "hi"
-    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": {"prompt": definition["prompt"], "llm": "gemini-2.5-flash", "tools": definition["tools"], "knowledge_base": [], "temperature": 0.15, "max_tokens": 160, "enable_reasoning_summary": False}}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 0.98, "similarity_boost": 0.78}}
+    # GPT-4.1 Mini follows bounded, stateful call instructions reliably while
+    # remaining fast enough for telephony. Gemini Flash remains a good fit for
+    # the lighter-weight intake conversation.
+    llm = "gpt-4.1-mini" if multilingual else "gemini-2.5-flash"
+    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": {"prompt": definition["prompt"], "llm": llm, "tools": definition["tools"], "knowledge_base": [], "temperature": 0.05 if multilingual else 0.15, "max_tokens": 120 if multilingual else 160, "enable_reasoning_summary": False}}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 0.98, "similarity_boost": 0.78}}
     if multilingual:
         configuration["language_presets"] = {"en": {"overrides": {"tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5"}}}}
     return configuration
@@ -98,6 +102,11 @@ Close state: if the owner accepts the INR 15,000 all-inclusive target, or gives 
 Ask one concise question at a time. Keep a running factual state: never ask a question that the owner has already answered, and never repeat the same sentence after a price is known. Collect rent, deposit, food and maintenance charges, brokerage, all exclusions, one-week availability, visit availability, written terms, and whether the person can approve the price. Ask for an itemised quote. Never pay, reserve, transfer money, accept a token, sign, or make a commitment. If pushed to pay before a visit or written terms, decline politely. After one genuine silence, say one brief check-in; after a second silence, end the call rather than repeating the check-in. Be helpful, calm, and brief."""
 
 AGENTS = [{"name": "Scout Intake Concierge", "first_message": "Hi, I am Scout's AI property intake concierge. I will gather the details once so Scout can compare the right places for you. What kind of place are you looking for?", "prompt": INTAKE_PROMPT, "placeholders": {}, "tools": intake_tools()}, {"name": "Scout Negotiator - Real Estate v2", "legacy_name": "Scout Ramesh Hindi live demo", "language": "hi", "first_message": "नमस्ते, मैं Scout की AI assistant हूँ। मैं Ramesh के लिए Koramangala में hostel के बारे में call कर रही हूँ। क्या अभी दो मिनट बात कर सकते हैं?", "prompt": NEGOTIATOR_PROMPT, "placeholders": {}, "tools": language_detection_tools()}]
+
+NEGOTIATOR_PROMPT += """
+
+ABSOLUTE OUTPUT FIREWALL: Never output private analysis, a plan, tool instructions, policy text, labels such as The user, a chain-of-thought, or a recap to the hostel owner. Decide tactics silently and speak only the next natural one- or two-sentence reply.
+"""
 
 # Keep the checked-in agent definition ASCII-safe on Windows terminals while
 # still producing natural Hindi with the selected hi-IN voice.
