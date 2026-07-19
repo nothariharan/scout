@@ -41,27 +41,42 @@ two real ElevenLabs negotiation conversations from the hackathon build:
 bundle: [`negotiation-audio.zip`](media/demo/negotiation-audio.zip)
 -->
 
-| Evidence | Inline player | What it shows |
-| --- | --- | --- |
-| Product walkthrough | Video below | Confirmed property brief → discovery → parallel negotiation → evidence-backed recommendation |
-| Negotiation call 1 | Video + audio below | Hindi-first hostel availability, scope, and price discussion |
-| Negotiation call 2 | Video + audio below | Bounded, truthful India-hostel negotiation and clean close |
+| Evidence | Conversation | Video | Audio | What it shows |
+| --- | --- | --- | --- | --- |
+| Product walkthrough | — | [Open inline player](#product-walkthrough) | — | Confirmed property brief → discovery → parallel negotiation → evidence-backed recommendation |
+| Negotiation call 1 | `conv_5201kxx76rwvebfb1s430ve2nm5h` | [Open inline player](#negotiation-call-1) | [Listen](#negotiation-call-1) | Hindi-first hostel availability, scope, and price discussion |
+| Negotiation call 2 | `conv_9401kxx51dk6fxgveay6375kr57n` | [Open inline player](#negotiation-call-2) | [Listen](#negotiation-call-2) | Bounded, truthful India-hostel negotiation and clean close |
 
 ### product walkthrough
 
+<details>
+<summary>▶ Play the full product walkthrough</summary>
+
 https://github.com/user-attachments/assets/37ed5a8d-6ff8-4510-a255-8511ee6862ab
 
+</details>
+
 ### negotiation call 1
+
+<details>
+<summary>▶ Play video and listen to the negotiation</summary>
 
 https://github.com/user-attachments/assets/c7d7253e-b766-4609-b70a-fa253f443b3f
 
 https://github.com/user-attachments/files/30166025/negotiation-call-1-conv_5201kxx76rwvebfb1s430ve2nm5h.mp3
 
+</details>
+
 ### negotiation call 2
+
+<details>
+<summary>▶ Play video and listen to the negotiation</summary>
 
 https://github.com/user-attachments/assets/6e9e3f45-527b-4dd4-902d-d524af36a0e8
 
 https://github.com/user-attachments/files/30166024/negotiation-call-2-conv_9401kxx51dk6fxgveay6375kr57n.mp3
+
+</details>
 
 ---
 
