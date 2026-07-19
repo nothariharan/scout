@@ -63,11 +63,14 @@ def intake_tools():
 
 def config(definition):
     multilingual = definition.get("language") == "hi"
-    # GPT-4.1 Mini follows bounded, stateful call instructions reliably while
-    # remaining fast enough for telephony. Gemini Flash remains a good fit for
-    # the lighter-weight intake conversation.
-    llm = "gpt-4.1-mini" if multilingual else "gemini-2.5-flash"
-    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": {"prompt": definition["prompt"], "llm": llm, "tools": definition["tools"], "knowledge_base": [], "temperature": 0.05 if multilingual else 0.15, "max_tokens": 120 if multilingual else 160, "enable_reasoning_summary": False}}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 0.98, "similarity_boost": 0.78}}
+    # Sonnet 4.6 is used for the stateful negotiation call. Explicitly
+    # disabling reasoning keeps its private deliberation out of telephony;
+    # Gemini Flash remains a good fit for the lighter intake conversation.
+    llm = "claude-sonnet-4-6" if multilingual else "gemini-2.5-flash"
+    prompt = {"prompt": definition["prompt"], "llm": llm, "tools": definition["tools"], "knowledge_base": [], "temperature": 0.05 if multilingual else 0.15, "max_tokens": 120 if multilingual else 160, "enable_reasoning_summary": False}
+    if multilingual:
+        prompt["reasoning_effort"] = "none"
+    configuration = {"agent": {"language": definition.get("language", "en"), "first_message": definition["first_message"], "dynamic_variables": {"dynamic_variable_placeholders": definition["placeholders"]}, "prompt": prompt}, "asr": {"quality": "high", "provider": "scribe_realtime", "user_input_audio_format": "ulaw_8000", "keywords": []}, "tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5" if multilingual else "eleven_flash_v2", "agent_output_audio_format": "ulaw_8000", "optimize_streaming_latency": 3, "stability": 0.40, "speed": 0.98, "similarity_boost": 0.78}}
     if multilingual:
         configuration["language_presets"] = {"en": {"overrides": {"tts": {"voice_id": VOICE_ID, "model_id": "eleven_flash_v2_5"}}}}
     return configuration
