@@ -98,15 +98,11 @@ While we were testing, Scout actually placed a call to a real hostel owner near 
 
 ## Live Project URL
 
-> Paste your deployed demo URL here (Vercel / public tunnel).  
-> Local/dev example used during build: orchestrator via public ngrok for ElevenLabs webhooks.  
-> **Required before submit.**
+https://scout-dusky-six.vercel.app
 
-Suggested format once live:
+Also aliased at: https://scout-nothariharan-4943s-projects.vercel.app
 
-```text
-https://YOUR-DEPLOYED-SCOUT-URL
-```
+> Live API calls still require the orchestrator reachable at `SCOUT_PUBLIC_ORCHESTRATOR_URL` (ngrok / hosted backend).
 
 ---
 
