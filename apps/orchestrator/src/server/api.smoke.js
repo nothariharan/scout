@@ -63,6 +63,6 @@ for (const q of report.ranked) {
   const fraud = q.fraud_signals?.length ? ` | fraud: ${q.fraud_signals.join(',')}` : '';
   console.log(`#${q.rank} ${q.listing_id} | ${q.effective_monthly_cost}/mo | ${q.risk_flag} | ${q.call_outcome.status}${moved}${fraud}`);
 }
-console.log('Recommendation:', report.recommendation.headline);
+console.log('Recommendation:', report.recommendation?.top_pick?.reasoning ?? '(none)');
 
 server.close();

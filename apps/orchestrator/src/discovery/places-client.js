@@ -58,18 +58,7 @@ export async function discoverCandidates({
       return { available: false, candidates: [], error: `places ${res.status}` };
     }
     const data = await res.json();
-    const candidates = (data.places ?? []).map((p) => ({
-      listing_id: p.id,
-      listing_name: p.displayName?.text ?? '',
-      phone: p.nationalPhoneNumber ?? p.internationalPhoneNumber ?? null,
-      address: p.formattedAddress ?? '',
-      lat: p.location?.latitude ?? null,
-      lng: p.location?.longitude ?? null,
-      distance_km:
-        p.location != null ? round1(haversineKm(lat, lng, p.location.latitude, p.location.longitude)) : null,
-      source: 'google_places',
-      deal_type: dealType,
-    }));
+    const candidates = (data.places ?? []).map((p) => toCandidate(p, { lat, lng, dealType }));
     return { available: true, candidates };
   } catch (err) {
     return { available: false, candidates: [], error: String(err) };
@@ -88,3 +77,31 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 }
 const toRad = (deg) => (deg * Math.PI) / 180;
 const round1 = (n) => Math.round(n * 10) / 10;
+
+// Map a Places result to a schema-conformant CandidateListing (omit empty optionals).
+function toCandidate(p, { lat, lng, dealType }) {
+  const candidate = {
+    listing_id: p.id,
+    listing_name: p.displayName?.text ?? '',
+    source: 'google_places',
+    deal_type: dealType,
+  };
+  const phone = p.nationalPhoneNumber ?? p.internationalPhoneNumber;
+  if (phone) candidate.phone = phone;
+
+  const plat = p.location?.latitude;
+  const plng = p.location?.longitude;
+  if (Number.isFinite(plat)) candidate.lat = plat;
+  if (Number.isFinite(plng)) candidate.lng = plng;
+  if (Number.isFinite(plat) && Number.isFinite(plng)) {
+    candidate.distance_km = round1(haversineKm(lat, lng, plat, plng));
+    candidate.commute_minutes = estimateCommuteMinutes(candidate.distance_km);
+  }
+  return candidate;
+}
+
+// Rough one-way commute estimate from straight-line distance (urban ~18 km/h).
+// TODO(person-b): swap for the Google Distance Matrix API for real ETAs.
+function estimateCommuteMinutes(distanceKm) {
+  return Math.round((distanceKm / 18) * 60);
+}

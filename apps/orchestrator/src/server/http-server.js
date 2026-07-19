@@ -14,9 +14,16 @@
 import http from 'node:http';
 import { createNegotiationService } from './negotiation-service.js';
 import { verifyElevenLabsSignature } from './verify-signature.js';
+import { loadState, saveState } from '../store/persistence.js';
 
-export function createServer({ requirement, benchmark, fallbackByPincode = {} } = {}) {
-  const service = createNegotiationService({ requirement, benchmark, fallbackByPincode });
+export function createServer({ requirement, benchmark, fallbackByPincode = {}, statePath } = {}) {
+  const initial = statePath ? loadState(statePath) : null;
+  const service = createNegotiationService({ requirement, benchmark, fallbackByPincode, initial });
+
+  // Optional persistence: snapshot to disk whenever state changes.
+  if (statePath) {
+    service.events.on('event', () => saveState(statePath, service.snapshot()));
+  }
 
   const server = http.createServer(async (req, res) => {
     try {

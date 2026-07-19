@@ -124,21 +124,49 @@ test('discover returns candidate shape (empty without key)', async () => {
   assert.ok(Array.isArray(d.candidates));
 });
 
-test('report exposes evidence_refs with transcript/recording links', async () => {
+test('report builds a contract-shaped Recommendation with real evidence_refs', async () => {
   const svc = createNegotiationService({ requirement, benchmark });
   const c = svc.startCall({ listing_id: 'a', listing_name: 'A' });
   svc.writeQuoteFields(c.call_id, {
     base_rent: 11000, lease_duration_months: 12,
     first_quoted_effective: 15000, final_quoted_effective: 13500,
     price_drop_evidence: 'Owner caved on maintenance',
-    recording_url: 'https://rec/a.mp3', transcript_url: 'https://t/a.txt',
   });
   svc.closeCall(c.call_id, { status: 'itemized_quote' });
   const rep = await svc.report();
-  assert.ok(Array.isArray(rep.recommendation.evidence_refs));
-  const ref = rep.recommendation.evidence_refs.find((x) => x.listing_id === 'a');
-  assert.equal(ref.recording_url, 'https://rec/a.mp3');
-  assert.equal(ref.line, 'Owner caved on maintenance');
+  assert.equal(rep.recommendation.requirement_spec_id, 'req_1');
+  assert.deepEqual(rep.recommendation.ranked_listing_ids, ['a']);
+  assert.equal(rep.recommendation.top_pick.listing_id, 'a');
+  const ref = rep.recommendation.top_pick.evidence_refs[0];
+  assert.equal(ref.listing_id, 'a');
+  assert.equal(typeof ref.line_index, 'number');
+  assert.equal(ref.quote_field, 'price_moved');
+  // the referenced transcript line resolves to the concession utterance
+  const call = svc.getCall(c.call_id);
+  assert.equal(call.transcript[ref.line_index].text, 'Owner caved on maintenance');
+});
+
+test('snapshot -> hydrate restores calls + report + counter', async () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const c = svc.startCall({ listing_id: 'a', listing_name: 'A' });
+  svc.writeQuoteFields(c.call_id, {
+    base_rent: 11000, lease_duration_months: 12,
+    first_quoted_effective: 15000, final_quoted_effective: 13500, price_moved: true,
+    price_drop_evidence: 'caved on maintenance',
+  });
+  svc.closeCall(c.call_id, { status: 'itemized_quote' });
+
+  // Simulate a disk round-trip (JSON) then rehydrate a fresh service.
+  const snap = JSON.parse(JSON.stringify(svc.snapshot()));
+  const svc2 = createNegotiationService({ initial: snap });
+
+  const rep = await svc2.report();
+  assert.equal(rep.recommendation.top_pick.listing_id, 'a');
+  assert.equal(svc2.listCalls().length, 1);
+  assert.ok(svc2.getCall(c.call_id).transcript.length >= 1);
+  // the id counter resumes so new calls don't collide with restored ones
+  const c2 = svc2.startCall({ listing_id: 'b' });
+  assert.notEqual(c2.call_id, c.call_id);
 });
 
 test('personalize creates a session for an unknown call_sid', () => {

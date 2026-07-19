@@ -23,7 +23,11 @@ const PORT = Number(process.env.PORT) || 8787;
 // Tavily-backed area benchmark for this requirement (fallback keyless).
 const benchmark = await resolveBenchmark(requirement, { fallbackByPincode: { '560034': 14000 } });
 
-const { server } = createServer({ requirement, benchmark, fallbackByPincode: { '560034': 14000 } });
+// Optional JSON persistence (survives restarts) when SCOUT_STATE_FILE is set.
+const statePath = process.env.SCOUT_STATE_FILE || undefined;
+
+const { server } = createServer({ requirement, benchmark, fallbackByPincode: { '560034': 14000 }, statePath });
 server.listen(PORT, () => {
-  console.log(`@scout/orchestrator API on :${PORT} (benchmark ${benchmark.effective_monthly} via ${benchmark.source})`);
+  const persist = statePath ? `, state ${statePath}` : '';
+  console.log(`@scout/orchestrator API on :${PORT} (benchmark ${benchmark.effective_monthly} via ${benchmark.source}${persist})`);
 });

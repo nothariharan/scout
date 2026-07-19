@@ -1,13 +1,15 @@
 // quotes-store.js
 // Confirmed-quotes store. Holds quotes that came from a REAL itemized call so
 // the Negotiator can cite them as genuine leverage — never invented numbers.
-// In-memory for the hackathon; swap for a DATABASE_URL-backed store later.
+// In-memory; snapshot()/initial support optional JSON persistence.
 
 /**
+ * @param {object} [opts]
+ * @param {object[]} [opts.initial] - hydrate from a prior snapshot()
  * @returns {object} store with immutable access (never hands out internal refs)
  */
-export function createQuotesStore() {
-  let quotes = [];
+export function createQuotesStore({ initial = [] } = {}) {
+  let quotes = initial.map((q) => ({ ...q }));
 
   return {
     /** Add a confirmed quote. Only itemized_quote outcomes are real leverage. */
@@ -37,6 +39,11 @@ export function createQuotesStore() {
     byListing(listingId) {
       const found = quotes.find((q) => q.listing_id === listingId);
       return found ? { ...found } : null;
+    },
+
+    /** Serializable copy for persistence. */
+    snapshot() {
+      return quotes.map((q) => ({ ...q }));
     },
 
     get size() {

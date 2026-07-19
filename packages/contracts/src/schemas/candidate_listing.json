@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@scout/contracts/candidate_listing.json",
+  "title": "CandidateListing",
+  "description": "FROZEN CONTRACT. A discovered listing BEFORE any call is placed. Produced by discovery (Places/portal search) and geofenced by radius/commute BEFORE dispatch. The web app lets the user deselect candidates; the orchestrator dials the selected ones and each produces one Quote keyed by the same listing_id. Do not rename fields without telling the whole team.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["listing_id", "listing_name", "source", "deal_type"],
+  "properties": {
+    "listing_id": { "type": "string", "description": "Stable unique id; the resulting Quote reuses this exact id." },
+    "listing_name": { "type": "string", "description": "Human-readable property/listing name." },
+    "source": { "type": "string", "description": "Where it was discovered, e.g. 'google_places', 'nobroker', 'magicbricks', 'manual'." },
+    "deal_type": { "type": "string", "enum": ["pg", "short_stay_rental"], "description": "Same vocabulary as requirement_spec deal_type." },
+    "phone": { "type": "string", "description": "Contact number to dial. May be absent until enriched." },
+    "area": { "type": "string", "description": "Neighbourhood / locality." },
+    "lat": { "type": "number", "description": "Listing latitude (for the map + commute filter)." },
+    "lng": { "type": "number", "description": "Listing longitude." },
+    "distance_km": { "type": "number", "minimum": 0, "description": "Straight-line/road distance from the requirement's target area." },
+    "commute_minutes": { "type": "number", "minimum": 0, "description": "Estimated one-way commute to the requirement's reference point (Distance Matrix)." },
+    "advertised_rent": { "type": "number", "minimum": 0, "description": "Portal-advertised monthly rent, if any. Advisory only; the real number comes from the call's Quote." },
+    "listing_url": { "type": "string", "description": "Link to the source listing, if any." }
+  }
+}

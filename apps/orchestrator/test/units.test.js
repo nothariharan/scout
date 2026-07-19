@@ -13,6 +13,9 @@ import { createCallSessionStore } from '../src/calls/call-session.js';
 import { buildInitiationData } from '../src/agent/initiation-data.js';
 import { verifyElevenLabsSignature } from '../src/server/verify-signature.js';
 import { resolveBenchmark } from '../src/benchmark/benchmark-service.js';
+import { saveState, loadState } from '../src/store/persistence.js';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 test('normalizeQuote computes effective monthly cost', () => {
   const q = normalizeQuote({
@@ -96,11 +99,13 @@ test('quotesStore: only itemized confirmable; best excludes high_risk; immutable
 test('callSession: allowlist, merge, sid + conversation mapping', () => {
   const s = createCallSessionStore();
   const c = s.create({ listing_id: 'a', call_sid: 'CA1' });
-  s.patchFields(c.call_id, { base_rent: 12000, evil: 'x', transcript_append: 'hi' });
+  s.patchFields(c.call_id, { base_rent: 12000, evil: 'x' });
+  s.appendLine(c.call_id, { text: 'hi' });
   const got = s.get(c.call_id);
   assert.equal(got.rawFields.base_rent, 12000);
   assert.equal(got.rawFields.evil, undefined);
   assert.equal(got.transcript, 'hi');
+  assert.equal(got.transcriptLines[0].text, 'hi');
   assert.equal(s.getByCallSid('CA1').call_id, c.call_id);
   s.linkConversation(c.call_id, 'conv1');
   assert.equal(s.getByConversationId('conv1').call_id, c.call_id);
@@ -116,6 +121,13 @@ test('buildInitiationData flattens spec and prunes empties', () => {
   assert.equal(data.dynamic_variables.area, 'Koramangala');
   assert.equal(data.dynamic_variables.amenities, 'wifi, food_included');
   assert.equal('pincode' in data.dynamic_variables, false);
+});
+
+test('persistence saveState / loadState round-trip', () => {
+  const path = join(tmpdir(), `scout-state-${process.pid}.json`);
+  assert.equal(loadState('/no/such/file.json'), null);
+  saveState(path, { hello: 'world', n: 42 });
+  assert.deepEqual(loadState(path), { hello: 'world', n: 42 });
 });
 
 test('resolveBenchmark falls back to per-pincode estimate without a key', async (t) => {

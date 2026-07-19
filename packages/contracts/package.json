@@ -8,7 +8,9 @@
     ".": "./src/index.js",
     "./schemas/requirement_spec.json": "./src/schemas/requirement_spec.json",
     "./schemas/quote.json": "./src/schemas/quote.json",
-    "./schemas/call_outcome.json": "./src/schemas/call_outcome.json"
+    "./schemas/call_outcome.json": "./src/schemas/call_outcome.json",
+    "./schemas/candidate_listing.json": "./src/schemas/candidate_listing.json",
+    "./schemas/recommendation.json": "./src/schemas/recommendation.json"
   },
   "scripts": {
     "test": "node src/effective_cost.js && node src/red_flag.js"

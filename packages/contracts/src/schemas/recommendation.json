@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@scout/contracts/recommendation.json",
+  "title": "Recommendation",
+  "description": "FROZEN CONTRACT. The final ranked shortlist the orchestrator produces from a set of Quotes for one RequirementSpec. Every claim in top_pick.reasoning must be backed by an evidence_ref that points at a real transcript line. The web app renders this; it never computes ranking itself. Do not rename fields without telling the whole team.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requirement_spec_id", "ranked_listing_ids", "top_pick"],
+  "properties": {
+    "requirement_spec_id": {
+      "type": "string",
+      "description": "The confirmed RequirementSpec this recommendation answers. Must match the spec reused verbatim across every call."
+    },
+    "ranked_listing_ids": {
+      "type": "array",
+      "description": "All quoted listings, best first. Ordered by effective_monthly_cost with risk_flag as a tie-breaker/penalty (orchestrator owns the exact rule).",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "top_pick": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["listing_id", "reasoning", "evidence_refs"],
+      "properties": {
+        "listing_id": {
+          "type": "string",
+          "description": "The single recommended listing. Must appear in ranked_listing_ids (normally first)."
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "Plain-language explanation of why this is the top pick. Every factual claim must be traceable via evidence_refs."
+        },
+        "evidence_refs": {
+          "type": "array",
+          "description": "Links from the reasoning to specific transcript lines. Never assert a negotiated number or concession without one.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["listing_id", "line_index"],
+            "properties": {
+              "listing_id": { "type": "string", "description": "Which call's transcript this evidence lives in." },
+              "line_index": { "type": "integer", "minimum": 0, "description": "Zero-based line index within that call's transcript." },
+              "quote_field": { "type": "string", "description": "Optional: which Quote field this line substantiates, e.g. 'base_rent', 'price_moved', 'fraud_signals'." }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional ISO 8601 timestamp when the recommendation was computed."
+    }
+  }
+}

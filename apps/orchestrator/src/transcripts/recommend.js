@@ -100,3 +100,12 @@ function templateRecommendation(rankedQuotes, requirement) {
 function pctOver(value, ceiling) {
   return Math.round(((value - ceiling) / ceiling) * 100);
 }
+
+/**
+ * Just the plain-language reasoning paragraph, for the contract Recommendation's
+ * top_pick.reasoning. OpenAI narrative when keyed; template headline otherwise.
+ */
+export async function generateReasoning(rankedQuotes, requirement, opts = {}) {
+  const rec = await generateRecommendation(rankedQuotes, requirement, opts);
+  return rec.narrative || rec.headline || '';
+}
