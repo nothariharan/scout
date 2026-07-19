@@ -6,23 +6,11 @@
 // One looping GSAP timeline syncs the phone with the pipeline stepper.
 // SIMULATED: scripted from a golden call — labeled in the UI.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { NeighborhoodMap } from "./NeighborhoodMap";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScoutMascot } from "./ScoutMascot";
-
-// Real ElevenLabs voices for each turn (generated assets in /assets/call).
-const CLIPS = {
-  i0: "/assets/call/i0.mp3",
-  i1: "/assets/call/i1.mp3",
-  n0: "/assets/call/n0.mp3",
-  n1: "/assets/call/n1.mp3",
-  n2: "/assets/call/n2.mp3",
-  n3: "/assets/call/n3.mp3",
-  n4: "/assets/call/n4.mp3",
-  ring: "/assets/call/ring.mp3",
-} as const;
-type ClipKey = keyof typeof CLIPS;
 
 const INTAKE: { speaker: "scout" | "user"; text: string }[] = [
   { speaker: "scout", text: "Hi! Where are we hunting, and what's the budget?" },
@@ -47,25 +35,6 @@ const BARS = 26;
 
 export function LiveCallDemo() {
   const root = useRef<HTMLDivElement>(null);
-  const [sound, setSound] = useState(false);
-  const soundRef = useRef(false);
-  const players = useRef<Partial<Record<ClipKey, HTMLAudioElement>>>({});
-
-  const play = (key: ClipKey) => {
-    if (!soundRef.current) return;
-    if (!players.current[key]) players.current[key] = new Audio(CLIPS[key]);
-    const a = players.current[key]!;
-    a.currentTime = 0;
-    void a.play().catch(() => {});
-  };
-  const stopAll = () => {
-    Object.values(players.current).forEach((a) => a?.pause());
-  };
-  const toggleSound = () => {
-    soundRef.current = !soundRef.current;
-    setSound(soundRef.current);
-    if (!soundRef.current) stopAll();
-  };
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -77,7 +46,6 @@ export function LiveCallDemo() {
       const intakeCaps = gsap.utils.toArray<HTMLElement>(".cap-intake");
       const negoCaps = gsap.utils.toArray<HTMLElement>(".cap-nego");
       const states = gsap.utils.toArray<HTMLElement>(".state-card");
-      const pins = gsap.utils.toArray<HTMLElement>(".map-pin");
       const rankRows = gsap.utils.toArray<HTMLElement>(".rank-row");
       const callRows = gsap.utils.toArray<HTMLElement>(".call-row");
 
@@ -98,7 +66,6 @@ export function LiveCallDemo() {
       tl.set([intakeCaps, negoCaps], { autoAlpha: 0, y: 14 });
       tl.set(".brief-chip", { autoAlpha: 0, scale: 0.9 });
       tl.set(".demo-outcome", { autoAlpha: 0, scale: 0.8 });
-      tl.set(pins, { scale: 0, transformOrigin: "50% 100%" });
       tl.set(".search-count", { textContent: "" });
       tl.set(rankRows, { y: (i) => [52, -52, 0][i], autoAlpha: 0.4 }); // discovery order
       tl.set(callRows, { autoAlpha: 0.35, x: 0 });
@@ -111,17 +78,15 @@ export function LiveCallDemo() {
       INTAKE.forEach((turn, i) => {
         tl.call(() => {
           phone.dataset.speaker = turn.speaker === "user" ? "seller" : "scout";
-          play(i === 0 ? "i0" : "i1");
         });
-        tl.to(intakeCaps[i], { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" }, i ? "+=3.2" : "+=0.4");
+        tl.to(intakeCaps[i], { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" }, i ? "+=1.0" : "+=0.4");
       });
       tl.to(".brief-chip", { autoAlpha: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, "+=0.7");
       tl.call(() => states[0].classList.add("is-done"));
 
       // ---- 2 · Search ----------------------------------------------------
       tl.add(activate(1), "+=0.5");
-      tl.to(pins, { scale: 1, duration: 0.35, ease: "back.out(2.5)", stagger: 0.06 });
-      tl.to(".search-count", { textContent: "14 places found", duration: 0.1 });
+      tl.to(".search-count", { textContent: "14 places found", duration: 0.1 }, "+=0.6");
       tl.call(() => states[1].classList.add("is-done"), [], "+=0.5");
 
       // ---- 3 · Rank (OpenAI) --------------------------------------------
@@ -133,7 +98,6 @@ export function LiveCallDemo() {
       tl.add(activate(3), "+=0.3");
       // #1 Sunrise: rings… no answer -> next.
       tl.to(callRows[0], { autoAlpha: 1, duration: 0.3 });
-      tl.call(() => play("ring"));
       tl.to(q(".row-status")[0], { textContent: "ringing…", duration: 0.1 });
       tl.to(callRows[0], { x: 3, duration: 0.07, yoyo: true, repeat: 5 }, "+=0.7");
       tl.to(q(".row-status")[0], { textContent: "no answer → next", duration: 0.1 });
@@ -146,9 +110,8 @@ export function LiveCallDemo() {
       NEGOTIATION.forEach((turn, i) => {
         tl.call(() => {
           phone.dataset.speaker = turn.speaker === "scout" ? "scout" : "seller";
-          play(("n" + i) as ClipKey);
         });
-        tl.to(negoCaps[i], { autoAlpha: 1, y: 0, duration: 0.45, ease: "power2.out" }, i ? "+=3.4" : "+=0.2");
+        tl.to(negoCaps[i], { autoAlpha: 1, y: 0, duration: 0.45, ease: "power2.out" }, i ? "+=0.9" : "+=0.2");
         if (i > 0) tl.to(negoCaps[i - 1], { autoAlpha: 0.35, duration: 0.35 }, "<");
       });
       tl.to(q(".row-status")[1], { textContent: "₹15,000 → ₹13,500 ✓", duration: 0.1 });
@@ -162,7 +125,6 @@ export function LiveCallDemo() {
     }, root);
 
     return () => {
-      stopAll();
       ctx.revert();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,11 +209,8 @@ export function LiveCallDemo() {
               </div>
             </div>
           </div>
-          <button onClick={toggleSound} className="btn-ghost mx-auto mt-4 block !px-4 !py-2 text-[12px]">
-            {sound ? "🔊 Voices on — mute" : "🔇 Hear the real voices (ElevenLabs)"}
-          </button>
-          <p className="mt-2 text-center text-[10px] uppercase tracking-wide text-secondary">
-            Simulated demo — scripted · real ElevenLabs voices
+          <p className="mt-3 text-center text-[10px] uppercase tracking-wide text-secondary">
+            Simulated demo — scripted from a golden call
           </p>
         </div>
 
@@ -270,18 +229,9 @@ export function LiveCallDemo() {
             {/* 2 · Search */}
             <li className="state-card card p-5">
               <StateHead n="02" title="Search the area" tag="places api" />
-              <div className="mt-3 flex items-center gap-5">
-                <div className="relative h-20 w-32 overflow-hidden rounded-xl bg-white/40">
-                  <span className="absolute left-3 top-4 h-px w-24 bg-line" />
-                  <span className="absolute left-7 top-0 h-20 w-px bg-line" />
-                  <span className="absolute left-16 top-0 h-20 w-px bg-line" />
-                  {[
-                    [14, 30], [34, 12], [52, 40], [72, 18], [88, 46], [44, 58], [102, 30], [20, 52],
-                  ].map(([x, y], i) => (
-                    <span key={i} className="map-pin absolute h-2.5 w-2.5 rounded-full bg-rust" style={{ left: x, top: y }} />
-                  ))}
-                </div>
-                <p className="search-count text-sm font-medium text-ink" />
+              <div className="mt-3">
+                <NeighborhoodMap className="h-52 w-full" />
+                <p className="search-count mt-2 text-sm font-medium text-ink" />
               </div>
             </li>
 

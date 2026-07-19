@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { LiveCallDemo } from "@/components/LiveCallDemo";
+import { ShieldSpot, LedgerSpot, ReceiptSpot } from "@/components/SpotIcons";
 
 const STEPS = [
   { n: "01", title: "Confirm one requirement", fact: "Voice or document. Reused verbatim on every call." },
@@ -249,21 +250,30 @@ export default function Home() {
         </div>
         <div className="grid gap-5 md:grid-cols-3">
           <div className="vow card p-6">
-            <p className="mono text-5xl font-light text-ink">0</p>
+            <div className="flex items-start justify-between">
+              <p className="mono text-5xl font-light text-ink">0</p>
+              <ShieldSpot className="h-14 w-14" />
+            </div>
             <h3 className="mt-3 text-xl">Invented bids</h3>
             <p className="mt-1.5 text-sm text-charcoal/70">
               Leverage comes only from confirmed quotes and real benchmarks.
             </p>
           </div>
           <div className="vow card p-6">
-            <p className="mono text-5xl font-light text-ink">3</p>
+            <div className="flex items-start justify-between">
+              <p className="mono text-5xl font-light text-ink">3</p>
+              <LedgerSpot className="h-14 w-14" />
+            </div>
             <h3 className="mt-3 text-xl">Structured endings</h3>
             <p className="mt-1.5 text-sm text-charcoal/70">
               Itemized quote, scheduled callback, or documented decline — nothing vague.
             </p>
           </div>
           <div className="vow card p-6">
-            <p className="mono text-5xl font-light text-ink">100%</p>
+            <div className="flex items-start justify-between">
+              <p className="mono text-5xl font-light text-ink">100%</p>
+              <ReceiptSpot className="h-14 w-14" />
+            </div>
             <h3 className="mt-3 text-xl">Evidence-backed</h3>
             <p className="mt-1.5 text-sm text-charcoal/70">
               Every recommendation cites the transcript line it stands on.
