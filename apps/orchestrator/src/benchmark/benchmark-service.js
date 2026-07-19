@@ -82,3 +82,16 @@ function median(nums) {
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : Math.round(((sorted[mid - 1] + sorted[mid]) / 2) * 100) / 100;
 }
+
+/**
+ * Convenience: resolve the area benchmark for a requirement in one call.
+ * Uses Tavily when TAVILY_API_KEY is set; otherwise the per-pincode fallback.
+ * @param {object} requirement - RequirementSpec (reads location + deal_type)
+ * @param {object} [opts]
+ * @param {Object} [opts.fallbackByPincode]
+ * @returns {Promise<{effective_monthly:number|null, source:string, sample_size:number, fetched_at:string}>}
+ */
+export async function resolveBenchmark(requirement = {}, { fallbackByPincode = {} } = {}) {
+  const service = createBenchmarkService({ fallbackByPincode });
+  return service.getBenchmark(requirement.location ?? {}, requirement.deal_type ?? 'pg');
+}

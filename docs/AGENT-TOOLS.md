@@ -58,6 +58,7 @@ Partial writes are merged; unknown fields are ignored.
   `base_rent`, `deposit`, `maintenance_monthly`, `brokerage_onetime`,
   `hidden_charges`, `lease_duration_months`, `amenities_included`,
   `first_quoted_effective`, `final_quoted_effective`, `price_moved`,
+  `price_drop_evidence` (the transcript line where the price changed),
   `commute_minutes`, `seller_language`, `transcript_append`
 - **Returns:** the updated session (state `in_progress`).
 

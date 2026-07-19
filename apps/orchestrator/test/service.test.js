@@ -54,15 +54,38 @@ test('personalize returns initiation data for the call', () => {
   assert.equal(data.dynamic_variables.listing_id, 'a');
 });
 
-test('ingestPostCall attaches transcript by conversation id', () => {
+test('ingestPostCall attaches transcript + recovers fields from it', async () => {
   const svc = createNegotiationService({ requirement, benchmark });
   const c = svc.startCall({ listing_id: 'a' });
   svc.linkConversation(c.call_id, 'conv-1');
-  const r = svc.ingestPostCall({
+  const r = await svc.ingestPostCall({
     type: 'post_call_transcription',
     data: { conversation_id: 'conv-1', transcript: [{ role: 'agent', message: 'hello' }, { role: 'user', message: 'rent is 12000' }] },
   });
   assert.equal(r.matched, true);
   assert.ok(svc.sessions.get(c.call_id).transcript.includes('rent is 12000'));
-  assert.deepEqual(svc.ingestPostCall({ data: { conversation_id: 'nope' } }), { ok: true, matched: false });
+  // OpenAI/regex parse recovered the fee from the transcript.
+  assert.equal(svc.sessions.get(c.call_id).rawFields.base_rent, 12000);
+  assert.deepEqual(await svc.ingestPostCall({ data: { conversation_id: 'nope' } }), { ok: true, matched: false });
+});
+
+test('closeCall enforces the 3-outcome contract', () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const c1 = svc.startCall({ listing_id: 'a' });
+  assert.throws(() => svc.closeCall(c1.call_id, { status: 'nonsense' }), /outcome/);
+  const c2 = svc.startCall({ listing_id: 'b' });
+  assert.throws(() => svc.closeCall(c2.call_id, { status: 'declined' }), /reason/);
+});
+
+test('price-drop evidence line is captured on close', () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const c = svc.startCall({ listing_id: 'a' });
+  svc.writeQuoteFields(c.call_id, {
+    base_rent: 11000, lease_duration_months: 12,
+    first_quoted_effective: 15000, final_quoted_effective: 13500,
+    price_drop_evidence: 'Owner: I will drop the maintenance if you commit today',
+  });
+  const closed = svc.closeCall(c.call_id, { status: 'itemized_quote' });
+  assert.equal(closed.quote.price_moved, true);
+  assert.equal(closed.quote.evidence_line, 'Owner: I will drop the maintenance if you commit today');
 });

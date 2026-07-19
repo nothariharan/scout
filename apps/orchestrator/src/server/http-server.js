@@ -46,7 +46,7 @@ async function route(req, res, service) {
   if (method === 'POST' && pathname === '/agent/post-call') {
     const { raw, json } = await readBody(req);
     if (!verifySignature(req, raw)) return send(res, 401, { error: 'invalid signature' });
-    return send(res, 200, service.ingestPostCall(json));
+    return send(res, 200, await service.ingestPostCall(json));
   }
 
   // --- Mid-call tool API ---

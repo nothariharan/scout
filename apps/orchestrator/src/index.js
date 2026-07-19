@@ -4,7 +4,7 @@
 // Scoring + pipeline
 export { normalizeQuote } from './normalize/normalize-quote.js';
 export { createQuotesStore } from './store/quotes-store.js';
-export { createBenchmarkService } from './benchmark/benchmark-service.js';
+export { createBenchmarkService, resolveBenchmark } from './benchmark/benchmark-service.js';
 export { fetchAreaRentData } from './benchmark/tavily-client.js';
 export { detectFraudSignals } from './risk/fraud-signals.js';
 export { assessRisk } from './risk/risk-service.js';

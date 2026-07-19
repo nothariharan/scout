@@ -12,6 +12,7 @@ import { createQuotesStore } from '../src/store/quotes-store.js';
 import { createCallSessionStore } from '../src/calls/call-session.js';
 import { buildInitiationData } from '../src/agent/initiation-data.js';
 import { verifyElevenLabsSignature } from '../src/server/verify-signature.js';
+import { resolveBenchmark } from '../src/benchmark/benchmark-service.js';
 
 test('normalizeQuote computes effective monthly cost', () => {
   const q = normalizeQuote({
@@ -115,6 +116,16 @@ test('buildInitiationData flattens spec and prunes empties', () => {
   assert.equal(data.dynamic_variables.area, 'Koramangala');
   assert.equal(data.dynamic_variables.amenities, 'wifi, food_included');
   assert.equal('pincode' in data.dynamic_variables, false);
+});
+
+test('resolveBenchmark falls back to per-pincode estimate without a key', async (t) => {
+  if (process.env.TAVILY_API_KEY) return t.skip('TAVILY_API_KEY set; skipping fallback assertion');
+  const bm = await resolveBenchmark(
+    { location: { pincode: '560034' }, deal_type: 'pg' },
+    { fallbackByPincode: { '560034': 14000 } },
+  );
+  assert.equal(bm.effective_monthly, 14000);
+  assert.equal(bm.source, 'fallback_estimate');
 });
 
 test('verifyElevenLabsSignature: valid, tampered, no-secret, stale', () => {

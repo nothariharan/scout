@@ -22,6 +22,7 @@ const ALLOWED_FIELDS = new Set([
   'commute_minutes',
   'seller_language',
   'listing_name',
+  'price_drop_evidence',
   'transcript_url',
   'recording_url',
 ]);

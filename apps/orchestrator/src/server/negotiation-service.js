@@ -12,6 +12,8 @@ import { buildLeverage } from '../leverage/leverage-builder.js';
 import { rankQuotes } from '../ranking/rank-quotes.js';
 import { generateRecommendation } from '../transcripts/recommend.js';
 import { buildInitiationData } from '../agent/initiation-data.js';
+import { parseTranscriptToQuote } from '../transcripts/parse-transcript.js';
+import { isValidOutcome, CALL_OUTCOME_STATUSES } from '../outcomes/call-outcome.js';
 
 /**
  * @param {object} args
@@ -57,13 +59,23 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
     return sessions.linkConversation(callId, conversationId);
   }
 
-  /** Post-call webhook: attach transcript evidence to the matching session. */
-  function ingestPostCall(event = {}) {
+  /** Post-call webhook: attach transcript evidence + recover fields via OpenAI. */
+  async function ingestPostCall(event = {}) {
     const data = event?.data ?? {};
     const conversationId = data.conversation_id;
     const session = conversationId ? sessions.getByConversationId(conversationId) : null;
     if (!session) return { ok: true, matched: false };
-    sessions.appendTranscript(session.call_id, extractTranscript(data));
+
+    const transcriptText = extractTranscript(data);
+    sessions.appendTranscript(session.call_id, transcriptText);
+
+    // If nothing was captured mid-call, recover structured fields from the
+    // transcript (OpenAI Structured Outputs when keyed; regex fallback keyless).
+    if (session.rawFields.base_rent == null && transcriptText) {
+      const parsed = await parseTranscriptToQuote(transcriptText, { listingId: session.listing_id });
+      sessions.patchFields(session.call_id, parsed);
+    }
+
     return { ok: true, matched: true, call_id: session.call_id };
   }
 
@@ -71,6 +83,15 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
   function closeCall(callId, outcome) {
     const session = sessions.get(callId);
     if (!session) throw new Error(`unknown call ${callId}`);
+
+    // Enforce the 3-outcome contract: every call ends itemized / callback / declined.
+    if (!isValidOutcome(outcome)) {
+      throw new Error(`invalid call outcome; must be one of ${CALL_OUTCOME_STATUSES.join(', ')}`);
+    }
+    if ((outcome.status === 'callback_scheduled' || outcome.status === 'declined') && !outcome.reason) {
+      throw new Error(`call outcome '${outcome.status}' requires a reason`);
+    }
+
     sessions.setOutcome(callId, outcome);
 
     // No pricing captured (e.g. pure callback) => nothing to score.
@@ -90,6 +111,7 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
       const drop = capturePriceDrop({
         firstEffective: session.rawFields.first_quoted_effective,
         finalEffective: session.rawFields.final_quoted_effective,
+        evidenceLine: session.rawFields.price_drop_evidence,
       });
       quote = { ...quote, ...drop };
     }
