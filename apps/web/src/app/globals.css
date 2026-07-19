@@ -37,13 +37,13 @@
   body {
     min-height: 100vh;
     color: var(--charcoal);
+    /* Sky stack: generated PNG (when scripts/generate-sky.mjs has run) wins,
+       the procedural SVG sky renders beneath it, gradients are the last net. */
     background:
-      radial-gradient(620px 320px at 16% 12%, rgba(255, 255, 255, 0.95), transparent 55%),
-      radial-gradient(780px 360px at 78% 22%, rgba(255, 255, 255, 0.85), transparent 52%),
-      radial-gradient(520px 260px at 42% 38%, rgba(255, 255, 255, 0.7), transparent 55%),
-      radial-gradient(900px 620px at 30% 118%, rgba(38, 118, 186, 0.55), transparent 64%),
+      url("/assets/sky-hero.png") center / cover no-repeat,
+      url("/assets/sky-hero.svg") center / cover no-repeat,
       linear-gradient(178deg, #cfe6f7 0%, #a9d0ee 34%, #7ab3e0 62%, #4f93cf 100%);
-    background-attachment: fixed;
+    background-attachment: fixed, fixed, fixed;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
       Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -332,6 +332,24 @@
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
     font-weight: 600;
     letter-spacing: -0.015em;
+  }
+}
+
+/* Honesty marquee (landing). Content is duplicated once in markup. */
+.marquee-track {
+  display: flex;
+  gap: 3.5rem;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
   }
 }
 

@@ -11,6 +11,8 @@
   "dependencies": {
     "@elevenlabs/react": "^1.10.1",
     "@scout/contracts": "workspace:*",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.25",
     "next": "14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
