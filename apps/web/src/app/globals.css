@@ -2,16 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* "Frozen water" glass OS theme: a bright glacial wallpaper with white
-   frost-glass panels and deep-water ink text. Token NAMES are kept from the
-   original theme so every page re-skins without markup changes; ROLES:
-   --ink = deep-water label, --rust = glacial tint (blue), --sage/--amber/--red
-   = semantics, --line = frost hairline, --paper/--paper-2 = frost fill tints. */
+/* "Liquid glass" theme: clear-as-water panels over a glacial wallpaper.
+   Surfaces are nearly transparent — refraction (SVG displacement), a small
+   blur, and bright specular edges do the work instead of a milky frost fill.
+   Token NAMES are kept from the original theme so every page re-skins without
+   markup changes; ROLES: --ink = deep-water label, --rust = glacial tint,
+   --sage/--amber/--red = semantics, --line = hairline, --paper/--paper-2 =
+   subtle glass fill tints. */
 :root {
   color-scheme: light;
   --ink: #07253a;
-  --paper: rgba(255, 255, 255, 0.35);
-  --paper-2: rgba(255, 255, 255, 0.5);
+  --paper: rgba(255, 255, 255, 0.16);
+  --paper-2: rgba(255, 255, 255, 0.28);
   --rust: #0071e3;
   --rust-hover: #1683f0;
   --sage: #157f3d;
@@ -22,25 +24,25 @@
   --red-bg: rgba(255, 59, 48, 0.14);
   --charcoal: #0c2b40;
   --secondary: rgba(12, 43, 64, 0.58);
+  --glass: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.65);
   --line: rgba(12, 43, 64, 0.14);
-  --glass: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.75);
 }
 
 @layer base {
   html {
     background: #dfeaf3;
   }
-  /* The "desktop": a fixed glacial-ice wallpaper the frost glass sits over. */
+  /* The "desktop": a fixed glacial-ice wallpaper the clear glass sits over. */
   body {
     min-height: 100vh;
     color: var(--charcoal);
     background:
-      radial-gradient(1100px 700px at 10% -10%, rgba(255, 255, 255, 0.9), transparent 58%),
-      radial-gradient(950px 640px at 90% 6%, rgba(148, 200, 238, 0.55), transparent 60%),
-      radial-gradient(1000px 760px at 24% 112%, rgba(88, 160, 214, 0.45), transparent 62%),
-      radial-gradient(760px 560px at 72% 92%, rgba(174, 226, 240, 0.5), transparent 60%),
-      linear-gradient(168deg, #eef6fb 0%, #d8e8f4 44%, #bfd9ec 100%);
+      radial-gradient(620px 320px at 16% 12%, rgba(255, 255, 255, 0.95), transparent 55%),
+      radial-gradient(780px 360px at 78% 22%, rgba(255, 255, 255, 0.85), transparent 52%),
+      radial-gradient(520px 260px at 42% 38%, rgba(255, 255, 255, 0.7), transparent 55%),
+      radial-gradient(900px 620px at 30% 118%, rgba(38, 118, 186, 0.55), transparent 64%),
+      linear-gradient(178deg, #cfe6f7 0%, #a9d0ee 34%, #7ab3e0 62%, #4f93cf 100%);
     background-attachment: fixed;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
       Arial, sans-serif;
@@ -85,7 +87,55 @@
     padding-inline: 22px;
   }
 
-  /* Frost hairline separator. */
+  /* ---- Liquid-glass layer stack (menu bar & hero surfaces) ----------------
+     Use on an element with position:relative + a border-radius:
+       <div class="lg-container"> <div class="lg-filter"/> <div class="lg-overlay"/>
+       <div class="lg-specular"/> <div class="lg-content">…</div> </div>
+     The #lg-dist SVG filter (defined once in layout) refracts the backdrop. */
+  .lg-container {
+    position: relative;
+    overflow: hidden;
+  }
+  .lg-filter {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    backdrop-filter: blur(1px) saturate(150%);
+    -webkit-backdrop-filter: blur(1px) saturate(150%);
+    backdrop-filter: blur(1px) url(#lg-dist) saturate(150%);
+    -webkit-backdrop-filter: blur(1px) url(#lg-dist) saturate(150%);
+  }
+  .lg-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    background: linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.14),
+      rgba(255, 255, 255, 0.02) 38%,
+      rgba(255, 255, 255, 0.02) 62%,
+      rgba(255, 255, 255, 0.12)
+    );
+  }
+  .lg-specular {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow:
+      inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.95),
+      inset -1px -1px 1px rgba(255, 255, 255, 0.55),
+      inset 0 0 10px rgba(255, 255, 255, 0.2);
+  }
+  .lg-content {
+    position: relative;
+    z-index: 3;
+  }
+
+  /* Hairline separator. */
   .wire {
     height: 1px;
     border: 0;
@@ -98,7 +148,7 @@
     );
   }
 
-  /* Numbered stage tab (frost segmented feel). */
+  /* Numbered stage tab (clear segmented feel). */
   .tab {
     display: inline-flex;
     align-items: center;
@@ -108,18 +158,21 @@
     font-size: 12px;
     font-weight: 500;
     letter-spacing: -0.01em;
-    color: var(--secondary);
+    color: rgba(12, 43, 64, 0.68);
     border-bottom: 0;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
   .tab:hover {
     color: var(--ink);
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.3);
   }
   .tab[data-active="true"] {
     color: var(--ink);
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 2px 8px rgba(30, 80, 120, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow:
+      0 2px 10px rgba(30, 80, 120, 0.14),
+      inset 1px 1px 1px rgba(255, 255, 255, 0.9),
+      inset -1px -1px 1px rgba(255, 255, 255, 0.4);
   }
   .tab .num {
     display: inline-grid;
@@ -166,44 +219,57 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(255, 255, 255, 0.55);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(3px) saturate(150%);
+    backdrop-filter: blur(3px) saturate(150%);
     color: var(--ink);
     font-size: 14px;
     font-weight: 500;
     letter-spacing: -0.01em;
     padding: 10px 20px;
     border-radius: 980px;
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 4px 14px rgba(30, 80, 120, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow:
+      0 4px 14px rgba(30, 80, 120, 0.12),
+      inset 1px 1px 1px rgba(255, 255, 255, 0.9),
+      inset -1px -1px 1px rgba(255, 255, 255, 0.4);
     transition: background 0.15s ease;
   }
   .btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.45);
   }
 
-  /* Frost-glass window panel. */
+  /* Clear-water glass panel: barely-there fill, small blur, specular edges. */
   .card {
-    background: var(--glass);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
-    backdrop-filter: blur(28px) saturate(160%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.14),
+      rgba(255, 255, 255, 0.04) 45%,
+      rgba(255, 255, 255, 0.1)
+    );
+    -webkit-backdrop-filter: blur(3px) saturate(150%);
+    backdrop-filter: blur(3px) saturate(150%);
     border: 1px solid var(--glass-border);
     border-radius: 22px;
-    box-shadow: 0 14px 44px rgba(24, 70, 110, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    box-shadow:
+      0 12px 36px rgba(24, 70, 110, 0.16),
+      inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.9),
+      inset -1px -1px 1px rgba(255, 255, 255, 0.4);
   }
 
   /* Deep-water panel for hero/emphasis (dark glass under the ice). */
   .glass-deep {
-    background: rgba(7, 37, 58, 0.82);
-    -webkit-backdrop-filter: blur(32px) saturate(160%);
-    backdrop-filter: blur(32px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(7, 37, 58, 0.62);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.32);
     border-radius: 22px;
-    box-shadow: 0 24px 60px rgba(10, 40, 66, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    box-shadow:
+      0 24px 60px rgba(10, 40, 66, 0.38),
+      inset 1px 1px 1px rgba(255, 255, 255, 0.3);
   }
 
-  /* Status chips (tinted frost). */
+  /* Status chips (clear tinted glass). */
   .pill {
     display: inline-flex;
     align-items: center;
@@ -213,9 +279,9 @@
     letter-spacing: 0.02em;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.32);
     color: var(--secondary);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.7);
   }
   .pill-sage {
     background: var(--sage-bg);

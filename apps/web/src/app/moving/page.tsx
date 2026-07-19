@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { MovingRequest } from "@scout/contracts/types";
 import { VoiceIntakePanel } from "@/components/VoiceIntakePanel";
 
-const INPUT = "w-full rounded-lg border border-white/80 bg-white/55 px-3 py-2 text-sm text-charcoal outline-none backdrop-blur focus:border-rust";
+const INPUT = "w-full rounded-lg border border-white/75 bg-white/30 px-3 py-2 text-sm text-charcoal outline-none backdrop-blur focus:border-rust";
 const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 
 export default function MovingIntakePage() {

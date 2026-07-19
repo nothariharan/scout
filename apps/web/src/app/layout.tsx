@@ -12,34 +12,68 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        {/* Floating glass menu bar: brand row + stage tabs in one window. */}
+        {/* Refraction filter for the liquid-glass surfaces (defined once). */}
+        <svg xmlns="http://www.w3.org/2000/svg" style={{ position: "absolute", width: 0, height: 0 }} aria-hidden>
+          <defs>
+            <filter
+              id="lg-dist"
+              x="-50%"
+              y="-50%"
+              width="200%"
+              height="200%"
+              filterUnits="objectBoundingBox"
+              primitiveUnits="userSpaceOnUse"
+              colorInterpolationFilters="linearRGB"
+            >
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.008 0.008"
+                numOctaves="2"
+                seed="92"
+                stitchTiles="stitch"
+                result="noise"
+              />
+              <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="blurred"
+                scale="70"
+                xChannelSelector="R"
+                yChannelSelector="G"
+              />
+            </filter>
+          </defs>
+        </svg>
+
+        {/* Floating liquid-glass menu capsule: brand row + stage tabs. */}
         <div className="sticky top-3 z-40 px-3">
           <div
-            className="mx-auto max-w-[996px] rounded-2xl border px-3"
+            className="lg-container mx-auto max-w-[996px]"
             style={{
-              background: "rgba(255, 255, 255, 0.55)",
-              borderColor: "rgba(255, 255, 255, 0.8)",
-              backdropFilter: "saturate(180%) blur(24px)",
-              WebkitBackdropFilter: "saturate(180%) blur(24px)",
-              boxShadow:
-                "0 12px 40px rgba(24, 70, 110, 0.18), inset 0 1px 0 rgba(255,255,255,0.9)",
+              borderRadius: 9999,
+              boxShadow: "0 14px 44px rgba(24, 70, 110, 0.2)",
             }}
           >
-            <header>
-              <div className="flex items-baseline justify-between px-2 pb-1 pt-3">
-                <a href="/" className="flex items-baseline gap-3">
-                  <span className="text-xl font-semibold tracking-tight text-ink">Scout</span>
-                  <span className="text-[11px] font-medium text-secondary">
-                    Case file · Negotiation
+            <div className="lg-filter" />
+            <div className="lg-overlay" />
+            <div className="lg-specular" />
+            <div className="lg-content px-7">
+              <header>
+                <div className="flex items-baseline justify-between px-2 pb-1 pt-3">
+                  <a href="/" className="flex items-baseline gap-3">
+                    <span className="text-xl font-semibold tracking-tight text-ink">Scout</span>
+                    <span className="text-[11px] font-medium text-secondary">
+                      Case file · Negotiation
+                    </span>
+                  </a>
+                  <span className="hidden text-[11px] text-secondary sm:block">
+                    Moving pilot · AI buying agent
                   </span>
-                </a>
-                <span className="hidden text-[11px] text-secondary sm:block">
-                  Moving pilot · AI buying agent
-                </span>
+                </div>
+              </header>
+              <div className="px-1 pb-2">
+                <StageNav />
               </div>
-            </header>
-            <div className="px-1 pb-2">
-              <StageNav />
             </div>
           </div>
         </div>
