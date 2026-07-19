@@ -9,16 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#07253a",
+        ink: "#1e1e28",
         paper: { DEFAULT: "rgba(255,255,255,0.35)", "2": "rgba(255,255,255,0.50)" },
         paper2: "rgba(255,255,255,0.50)",
-        rust: "#0071e3",
+        rust: "#5e5ce6",
         sage: { DEFAULT: "#157f3d", bg: "rgba(52,199,89,0.18)" },
         amber: { DEFAULT: "#b25000", bg: "rgba(255,159,10,0.20)" },
         red: { DEFAULT: "#d70015", bg: "rgba(255,59,48,0.14)" },
-        charcoal: "#0c2b40",
-        secondary: "rgba(12,43,64,0.58)",
-        line: "rgba(12,43,64,0.14)",
+        charcoal: "#26262f",
+        secondary: "rgba(38,38,55,0.56)",
+        line: "rgba(35,35,55,0.13)",
       },
       fontFamily: {
         serif: [

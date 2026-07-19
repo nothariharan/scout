@@ -54,7 +54,7 @@ export function MapPanel({
     >
       <defs>
         <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse">
-          <path d="M 26 0 L 0 0 0 26" fill="none" stroke="rgba(12,43,64,0.18)" strokeWidth="1" opacity="0.6" />
+          <path d="M 26 0 L 0 0 0 26" fill="none" stroke="rgba(35,35,55,0.18)" strokeWidth="1" opacity="0.6" />
         </pattern>
       </defs>
       <rect width={W} height={H} fill="url(#grid)" />
@@ -67,7 +67,7 @@ export function MapPanel({
             y1={y(anchor.lat)}
             x2={x(p.lng)}
             y2={y(p.lat)}
-            stroke="rgba(12,43,64,0.18)"
+            stroke="rgba(35,35,55,0.18)"
             strokeWidth="1"
             strokeDasharray="3 4"
             opacity={selectedIds.has(p.listing_id) ? 0.9 : 0.4}
@@ -76,13 +76,13 @@ export function MapPanel({
 
       {target && (
         <g>
-          <circle cx={x(target.lng)} cy={y(target.lat)} r="7" fill="none" stroke="#0c2b40" strokeWidth="2" />
+          <circle cx={x(target.lng)} cy={y(target.lat)} r="7" fill="none" stroke="#1e1e28" strokeWidth="2" />
           <text
             x={x(target.lng) + 11}
             y={y(target.lat) + 4}
             fontFamily="SF Mono, ui-monospace, monospace"
             fontSize="10"
-            fill="#0c2b40"
+            fill="#1e1e28"
           >
             {spec.location.area}
           </text>
@@ -113,8 +113,8 @@ export function MapPanel({
               cx={x(p.lng)}
               cy={y(p.lat)}
               r={active ? 8 : 6}
-              fill={selected ? "#0071e3" : "rgba(12,43,64,0.30)"}
-              stroke={active ? "#0c2b40" : "transparent"}
+              fill={selected ? "#5e5ce6" : "rgba(35,35,55,0.30)"}
+              stroke={active ? "#1e1e28" : "transparent"}
               strokeWidth="2"
             />
             {p.commute_minutes != null && (
@@ -123,7 +123,7 @@ export function MapPanel({
                 y={y(p.lat) + 4}
                 fontFamily="SF Mono, ui-monospace, monospace"
                 fontSize="10"
-                fill="rgba(12,43,64,0.60)"
+                fill="rgba(38,38,55,0.60)"
               >
                 {p.commute_minutes}m
               </text>

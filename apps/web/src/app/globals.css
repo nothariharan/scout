@@ -11,42 +11,69 @@
    subtle glass fill tints. */
 :root {
   color-scheme: light;
-  --ink: #07253a;
+  --ink: #1e1e28;
   --paper: rgba(255, 255, 255, 0.16);
   --paper-2: rgba(255, 255, 255, 0.28);
-  --rust: #0071e3;
-  --rust-hover: #1683f0;
+  --rust: #5e5ce6;
+  --rust-hover: #7674ff;
   --sage: #157f3d;
   --sage-bg: rgba(52, 199, 89, 0.18);
   --amber: #b25000;
   --amber-bg: rgba(255, 159, 10, 0.2);
   --red: #d70015;
   --red-bg: rgba(255, 59, 48, 0.14);
-  --charcoal: #0c2b40;
-  --secondary: rgba(12, 43, 64, 0.58);
+  --charcoal: #26262f;
+  --secondary: rgba(38, 38, 55, 0.56);
   --glass: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.65);
-  --line: rgba(12, 43, 64, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.68);
+  --line: rgba(35, 35, 55, 0.13);
 }
 
 @layer base {
   html {
-    background: #dfeaf3;
+    background: #f5f3f7;
   }
-  /* The "desktop": a fixed glacial-ice wallpaper the clear glass sits over. */
+  /* The "desktop": an iridescent pearl field the clear glass sits over. */
   body {
     min-height: 100vh;
     color: var(--charcoal);
-    /* Sky stack: generated PNG (when scripts/generate-sky.mjs has run) wins,
-       the procedural SVG sky renders beneath it, gradients are the last net. */
     background:
-      url("/assets/sky-hero.png") center / cover no-repeat,
-      url("/assets/sky-hero.svg") center / cover no-repeat,
-      linear-gradient(178deg, #cfe6f7 0%, #a9d0ee 34%, #7ab3e0 62%, #4f93cf 100%);
-    background-attachment: fixed, fixed, fixed;
+      radial-gradient(900px 700px at 85% 10%, rgba(186, 205, 255, 0.55), transparent 60%),
+      radial-gradient(800px 640px at 8% 28%, rgba(255, 198, 221, 0.5), transparent 58%),
+      radial-gradient(760px 620px at 78% 82%, rgba(186, 244, 220, 0.55), transparent 60%),
+      radial-gradient(700px 560px at 22% 92%, rgba(214, 198, 255, 0.5), transparent 58%),
+      linear-gradient(170deg, #fbfafc 0%, #f2eff6 48%, #e9ecf6 100%);
+    background-attachment: fixed;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
       Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+  /* Slow-drifting sheen: an oversized fixed layer moved on the compositor. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -22%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(620px 520px at 30% 20%, rgba(255, 214, 231, 0.5), transparent 60%),
+      radial-gradient(700px 560px at 72% 38%, rgba(196, 216, 255, 0.5), transparent 62%),
+      radial-gradient(640px 540px at 44% 78%, rgba(196, 245, 224, 0.45), transparent 60%);
+    animation: pearl-drift 32s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes pearl-drift {
+    from {
+      transform: translate3d(-2.5%, -2%, 0) rotate(-1.6deg) scale(1.02);
+    }
+    to {
+      transform: translate3d(2.5%, 2.5%, 0) rotate(1.6deg) scale(1.06);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body::before {
+      animation: none;
+    }
   }
   h1,
   h2,
@@ -59,10 +86,10 @@
     letter-spacing: -0.015em;
   }
   ::placeholder {
-    color: rgba(12, 43, 64, 0.38);
+    color: rgba(38, 38, 55, 0.38);
   }
   ::selection {
-    background: rgba(0, 113, 227, 0.25);
+    background: rgba(94, 92, 230, 0.25);
   }
   :focus-visible {
     outline: 2px solid var(--rust);
@@ -142,8 +169,8 @@
     background: linear-gradient(
       to right,
       transparent,
-      rgba(12, 43, 64, 0.2) 18%,
-      rgba(12, 43, 64, 0.2) 82%,
+      rgba(35, 35, 55, 0.2) 18%,
+      rgba(35, 35, 55, 0.2) 82%,
       transparent
     );
   }
@@ -158,7 +185,7 @@
     font-size: 12px;
     font-weight: 500;
     letter-spacing: -0.01em;
-    color: rgba(12, 43, 64, 0.68);
+    color: rgba(38, 38, 55, 0.66);
     border-bottom: 0;
     transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
@@ -170,7 +197,7 @@
     color: var(--ink);
     background: rgba(255, 255, 255, 0.3);
     box-shadow:
-      0 2px 10px rgba(30, 80, 120, 0.14),
+      0 2px 10px rgba(70, 60, 130, 0.14),
       inset 1px 1px 1px rgba(255, 255, 255, 0.9),
       inset -1px -1px 1px rgba(255, 255, 255, 0.4);
   }
@@ -179,7 +206,7 @@
     place-items: center;
     width: 22px;
     height: 22px;
-    border: 1px solid rgba(12, 43, 64, 0.22);
+    border: 1px solid rgba(38, 38, 55, 0.22);
     border-radius: 999px;
     font-size: 11px;
     font-variant-numeric: tabular-nums;
@@ -196,7 +223,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(180deg, #1d86f0, #0071e3);
+    background: linear-gradient(180deg, #7a78ff, #5e5ce6);
     color: #fff;
     font-size: 14px;
     font-weight: 500;
@@ -204,7 +231,7 @@
     padding: 10px 20px;
     border-radius: 980px;
     border: 1px solid rgba(255, 255, 255, 0.55);
-    box-shadow: 0 8px 22px rgba(0, 113, 227, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 22px rgba(94, 92, 230, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.45);
     transition: filter 0.15s ease, transform 0.12s ease;
   }
   .btn:hover {
@@ -230,7 +257,7 @@
     border-radius: 980px;
     border: 1px solid rgba(255, 255, 255, 0.75);
     box-shadow:
-      0 4px 14px rgba(30, 80, 120, 0.12),
+      0 4px 14px rgba(70, 60, 130, 0.12),
       inset 1px 1px 1px rgba(255, 255, 255, 0.9),
       inset -1px -1px 1px rgba(255, 255, 255, 0.4);
     transition: background 0.15s ease;
@@ -252,20 +279,20 @@
     border: 1px solid var(--glass-border);
     border-radius: 22px;
     box-shadow:
-      0 12px 36px rgba(24, 70, 110, 0.16),
+      0 12px 36px rgba(70, 60, 130, 0.14),
       inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.9),
       inset -1px -1px 1px rgba(255, 255, 255, 0.4);
   }
 
   /* Deep-water panel for hero/emphasis (dark glass under the ice). */
   .glass-deep {
-    background: rgba(7, 37, 58, 0.62);
+    background: rgba(30, 28, 52, 0.72);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
     backdrop-filter: blur(18px) saturate(160%);
     border: 1px solid rgba(255, 255, 255, 0.32);
     border-radius: 22px;
     box-shadow:
-      0 24px 60px rgba(10, 40, 66, 0.38),
+      0 24px 60px rgba(40, 32, 80, 0.4),
       inset 1px 1px 1px rgba(255, 255, 255, 0.3);
   }
 
@@ -306,7 +333,7 @@
     font-size: 40px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    color: rgba(12, 43, 64, 0.28);
+    color: rgba(38, 38, 55, 0.28);
   }
 
   /* Recommendation badge (glacial capsule). */
@@ -316,9 +343,9 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #005bb8;
-    background: rgba(0, 113, 227, 0.14);
-    border: 1px solid rgba(0, 113, 227, 0.3);
+    color: #4a48c8;
+    background: rgba(94, 92, 230, 0.14);
+    border: 1px solid rgba(94, 92, 230, 0.32);
     border-radius: 980px;
     padding: 7px 14px;
   }
@@ -374,7 +401,7 @@
   height: 8px;
 }
 .scroll-quiet::-webkit-scrollbar-thumb {
-  background: rgba(12, 43, 64, 0.25);
+  background: rgba(38, 38, 55, 0.25);
   border-radius: 999px;
 }
 .scroll-quiet::-webkit-scrollbar-track {
