@@ -15,6 +15,7 @@
 
 import http from 'node:http';
 import { createNegotiationService } from './negotiation-service.js';
+import { createMovingNegotiationService } from '../moving/moving-negotiation-service.js';
 import { planNegotiation } from '../negotiation/strategy-engine.js';
 import { discoverCandidates } from '../discovery/places-client.js';
 import { createRequirementStore } from '../requests/requirement-store.js';
@@ -34,6 +35,17 @@ export function createServer({ requirement, benchmark, discovery = discoverCandi
   });
 
   return { server, service, services, requirementStore };
+}
+
+function createWorkflowService(spec, benchmark, idPrefix) {
+  return spec?.vertical === 'moving'
+    ? createMovingNegotiationService({ request: spec, benchmark, idPrefix: `moving_${idPrefix ?? 'call'}` })
+    : createNegotiationService({ requirement: spec, benchmark });
+}
+
+function workflowForCall(services, defaultService, callId) {
+  if (defaultService.sessions.get(callId)) return defaultService;
+  return [...services.values()].find((candidate) => candidate.sessions.get(callId)) ?? null;
 }
 
 async function route(req, res, context) {
@@ -62,17 +74,21 @@ async function route(req, res, context) {
   const quoteMatch = pathname.match(/^\/calls\/([^/]+)\/quote$/);
   if (method === 'POST' && quoteMatch) {
     const body = await readBody(req);
-    return send(res, 200, service.writeQuoteFields(quoteMatch[1], body));
+    const workflow = workflowForCall(services, service, quoteMatch[1]);
+    if (!workflow) return send(res, 404, { error: 'call not found' });
+    return send(res, 200, workflow.writeQuoteFields(quoteMatch[1], body));
   }
 
   const leverageMatch = pathname.match(/^\/calls\/([^/]+)\/leverage$/);
   if (method === 'GET' && leverageMatch) {
-    return send(res, 200, { leverage: service.getLeverage(leverageMatch[1]) });
+    const workflow = workflowForCall(services, service, leverageMatch[1]);
+    if (!workflow) return send(res, 404, { error: 'call not found' });
+    return send(res, 200, { leverage: workflow.getLeverage(leverageMatch[1]) });
   }
 
   if (method === 'POST' && pathname === '/requirements') {
     const record = await requirementStore.create(await readBody(req));
-    services.set(record.id, createNegotiationService({ requirement: record.spec, benchmark }));
+    services.set(record.id, createWorkflowService(record.spec, benchmark, record.id));
     return send(res, 201, record);
   }
 
@@ -91,7 +107,7 @@ async function route(req, res, context) {
     if (!record) return send(res, 404, { error: 'requirement not found' });
     if (!record.confirmed_at) return send(res, 409, { error: 'confirm the requirement before discovery' });
     const body = await readBody(req);
-    const result = await discovery({ location: record.spec.location, serviceType: body.service_type ?? 'moving', radiusMeters: body.radius_meters, limit: body.limit });
+    const result = await discovery({ location: record.spec.origin ?? record.spec.location, serviceType: body.service_type ?? (record.spec.vertical === 'moving' ? 'moving' : 'pg'), radiusMeters: body.radius_meters, limit: body.limit });
     await requirementStore.setCandidates(record.id, result.candidates);
     return send(res, 200, result);
   }
@@ -108,6 +124,12 @@ async function route(req, res, context) {
     return send(res, 200, { calls: workflow ? workflow.listCalls() : [] });
   }
 
+  const requestReportMatch = pathname.match(/^\/requirements\/([^/]+)\/report$/);
+  if (method === 'GET' && requestReportMatch) {
+    const workflow = services.get(requestReportMatch[1]);
+    return send(res, 200, workflow ? await workflow.report() : { ranked: [], recommendation: { headline: 'No calls have been dispatched yet.' } });
+  }
+
   const dispatchMatch = pathname.match(/^\/requirements\/([^/]+)\/dispatch$/);
   if (method === 'POST' && dispatchMatch) {
     const record = await requirementStore.get(dispatchMatch[1]);
@@ -115,7 +137,7 @@ async function route(req, res, context) {
     if (!record.confirmed_at) return send(res, 409, { error: 'confirm the requirement before dispatch' });
     const body = await readBody(req); const selected = new Set(body.listing_ids ?? []);
     const candidateList = (record.candidates ?? []).filter((candidate) => selected.has(candidate.listing_id));
-    const workflow = services.get(record.id) ?? createNegotiationService({ requirement: record.spec, benchmark });
+    const workflow = services.get(record.id) ?? createWorkflowService(record.spec, benchmark, record.id);
     services.set(record.id, workflow);
     const calls = await Promise.all(candidateList.map(async (candidate) => {
       const session = workflow.startCall(candidate);
@@ -143,7 +165,9 @@ async function route(req, res, context) {
   const strategyMatch = pathname.match(/^\/calls\/([^/]+)\/strategy$/);
   if (method === 'POST' && strategyMatch) {
     const body = await readBody(req);
-    return send(res, 200, { strategy: service.getStrategy(strategyMatch[1], body) });
+    const workflow = workflowForCall(services, service, strategyMatch[1]);
+    if (!workflow) return send(res, 404, { error: 'call not found' });
+    return send(res, 200, { strategy: workflow.getStrategy(strategyMatch[1], body) });
   }
 
   if (method === 'POST' && pathname === '/strategy') {
@@ -154,7 +178,9 @@ async function route(req, res, context) {
   const outcomeMatch = pathname.match(/^\/calls\/([^/]+)\/outcome$/);
   if (method === 'POST' && outcomeMatch) {
     const body = await readBody(req);
-    return send(res, 200, service.closeCall(outcomeMatch[1], body));
+    const workflow = workflowForCall(services, service, outcomeMatch[1]);
+    if (!workflow) return send(res, 404, { error: 'call not found' });
+    return send(res, 200, workflow.closeCall(outcomeMatch[1], body));
   }
 
   if (method === 'GET' && pathname === '/report') {

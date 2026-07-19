@@ -23,15 +23,29 @@ const ALLOWED_FIELDS = new Set([
   'listing_name',
   'transcript_url',
   'recording_url',
+  'base_price',
+  'packing',
+  'unpacking',
+  'stairs',
+  'long_carry',
+  'fuel',
+  'insurance',
+  'storage',
+  'other_fees',
+  'binding_total',
+  'first_quoted_total',
+  'quote_status',
+  'risk_signals',
+  'counter_rounds',
 ]);
 
-export function createCallSessionStore() {
+export function createCallSessionStore({ prefix = 'call' } = {}) {
   const sessions = new Map(); // call_id -> session
   let counter = 0;
 
   function nextId() {
     counter += 1;
-    return `call_${counter}`;
+      return `${prefix}_${counter}`;
   }
 
   return {
