@@ -6,10 +6,23 @@
 // One looping GSAP timeline syncs the phone with the pipeline stepper.
 // SIMULATED: scripted from a golden call — labeled in the UI.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScoutMascot } from "./ScoutMascot";
+
+// Real ElevenLabs voices for each turn (generated assets in /assets/call).
+const CLIPS = {
+  i0: "/assets/call/i0.mp3",
+  i1: "/assets/call/i1.mp3",
+  n0: "/assets/call/n0.mp3",
+  n1: "/assets/call/n1.mp3",
+  n2: "/assets/call/n2.mp3",
+  n3: "/assets/call/n3.mp3",
+  n4: "/assets/call/n4.mp3",
+  ring: "/assets/call/ring.mp3",
+} as const;
+type ClipKey = keyof typeof CLIPS;
 
 const INTAKE: { speaker: "scout" | "user"; text: string }[] = [
   { speaker: "scout", text: "Hi! Where are we hunting, and what's the budget?" },
@@ -34,6 +47,25 @@ const BARS = 26;
 
 export function LiveCallDemo() {
   const root = useRef<HTMLDivElement>(null);
+  const [sound, setSound] = useState(false);
+  const soundRef = useRef(false);
+  const players = useRef<Partial<Record<ClipKey, HTMLAudioElement>>>({});
+
+  const play = (key: ClipKey) => {
+    if (!soundRef.current) return;
+    if (!players.current[key]) players.current[key] = new Audio(CLIPS[key]);
+    const a = players.current[key]!;
+    a.currentTime = 0;
+    void a.play().catch(() => {});
+  };
+  const stopAll = () => {
+    Object.values(players.current).forEach((a) => a?.pause());
+  };
+  const toggleSound = () => {
+    soundRef.current = !soundRef.current;
+    setSound(soundRef.current);
+    if (!soundRef.current) stopAll();
+  };
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -77,8 +109,11 @@ export function LiveCallDemo() {
       tl.add(activate(0));
       tl.call(() => { phone.dataset.speaker = "scout"; });
       INTAKE.forEach((turn, i) => {
-        tl.call(() => { phone.dataset.speaker = turn.speaker === "user" ? "seller" : "scout"; });
-        tl.to(intakeCaps[i], { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" }, i ? "+=1.0" : "+=0.4");
+        tl.call(() => {
+          phone.dataset.speaker = turn.speaker === "user" ? "seller" : "scout";
+          play(i === 0 ? "i0" : "i1");
+        });
+        tl.to(intakeCaps[i], { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" }, i ? "+=3.2" : "+=0.4");
       });
       tl.to(".brief-chip", { autoAlpha: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, "+=0.7");
       tl.call(() => states[0].classList.add("is-done"));
@@ -98,6 +133,7 @@ export function LiveCallDemo() {
       tl.add(activate(3), "+=0.3");
       // #1 Sunrise: rings… no answer -> next.
       tl.to(callRows[0], { autoAlpha: 1, duration: 0.3 });
+      tl.call(() => play("ring"));
       tl.to(q(".row-status")[0], { textContent: "ringing…", duration: 0.1 });
       tl.to(callRows[0], { x: 3, duration: 0.07, yoyo: true, repeat: 5 }, "+=0.7");
       tl.to(q(".row-status")[0], { textContent: "no answer → next", duration: 0.1 });
@@ -108,8 +144,11 @@ export function LiveCallDemo() {
       tl.to(".scr-intake", { autoAlpha: 0, duration: 0.4 }, "<");
       tl.to(".scr-nego", { autoAlpha: 1, duration: 0.4 }, "<");
       NEGOTIATION.forEach((turn, i) => {
-        tl.call(() => { phone.dataset.speaker = turn.speaker === "scout" ? "scout" : "seller"; });
-        tl.to(negoCaps[i], { autoAlpha: 1, y: 0, duration: 0.45, ease: "power2.out" }, i ? "+=0.9" : "+=0.2");
+        tl.call(() => {
+          phone.dataset.speaker = turn.speaker === "scout" ? "scout" : "seller";
+          play(("n" + i) as ClipKey);
+        });
+        tl.to(negoCaps[i], { autoAlpha: 1, y: 0, duration: 0.45, ease: "power2.out" }, i ? "+=3.4" : "+=0.2");
         if (i > 0) tl.to(negoCaps[i - 1], { autoAlpha: 0.35, duration: 0.35 }, "<");
       });
       tl.to(q(".row-status")[1], { textContent: "₹15,000 → ₹13,500 ✓", duration: 0.1 });
@@ -122,7 +161,11 @@ export function LiveCallDemo() {
       tl.to([intakeCaps, negoCaps, ".brief-chip"], { autoAlpha: 0, duration: 0.5 });
     }, root);
 
-    return () => ctx.revert();
+    return () => {
+      stopAll();
+      ctx.revert();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -204,8 +247,11 @@ export function LiveCallDemo() {
               </div>
             </div>
           </div>
-          <p className="mt-3 text-center text-[10px] uppercase tracking-wide text-secondary">
-            Simulated demo — scripted from a golden call
+          <button onClick={toggleSound} className="btn-ghost mx-auto mt-4 block !px-4 !py-2 text-[12px]">
+            {sound ? "🔊 Voices on — mute" : "🔇 Hear the real voices (ElevenLabs)"}
+          </button>
+          <p className="mt-2 text-center text-[10px] uppercase tracking-wide text-secondary">
+            Simulated demo — scripted · real ElevenLabs voices
           </p>
         </div>
 
