@@ -12,6 +12,7 @@ export function VoiceIntakePanel({ onConfirmed }: { onConfirmed: (message: strin
 function VoiceIntake({ onConfirmed }: { onConfirmed: (message: string) => void }) {
   const [agentId, setAgentId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const conversation = useConversation({
     clientTools: {
       submit_moving_brief: async (parameters: Brief) => submitBrief(parameters, onConfirmed),
@@ -35,7 +36,18 @@ function VoiceIntake({ onConfirmed }: { onConfirmed: (message: string) => void }
     } catch { setNotice("Microphone access is required for voice intake. You can continue with the form instead."); }
   }
 
-  return <section className="card p-5"><p className="mono text-[10px] uppercase tracking-[0.16em] text-rust">ElevenLabs voice intake</p><h2 className="mt-2 text-xl">Prefer to describe the move aloud?</h2><p className="mt-2 text-sm leading-relaxed text-charcoal/70">Scout asks for the same details as the form, reads back the summary, and saves only after your spoken confirmation.</p><div className="mt-4 flex flex-wrap items-center gap-3">{conversation.status === "connected" ? <button className="btn-ghost" onClick={() => conversation.endSession()}>END VOICE INTAKE</button> : <button className="btn" disabled={!agentId || conversation.status === "connecting"} onClick={() => void start()}>{conversation.status === "connecting" ? "CONNECTING…" : "START VOICE INTAKE"}</button>}<span className="mono text-[10px] uppercase text-charcoal/50">{conversation.status}</span></div>{notice && <p className="mono mt-3 text-[11px] text-charcoal/65">{notice}</p>}</section>;
+  async function uploadDocument(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      await conversation.uploadFile(file);
+      setNotice(`${file.name} was sent to Scout. Ask it to extract the move details, then confirm the spoken summary before it saves.`);
+    } catch { setNotice("Scout could not read that file. Try a clear image, PDF, or enter the details in the form."); }
+    finally { setUploading(false); event.target.value = ""; }
+  }
+
+  return <section className="card p-5"><p className="mono text-[10px] uppercase tracking-[0.16em] text-rust">ElevenLabs voice or document intake</p><h2 className="mt-2 text-xl">Describe the move—or give Scout a document.</h2><p className="mt-2 text-sm leading-relaxed text-charcoal/70">Scout asks for the same details as the form, can extract a clear moving quote or inventory document, reads back the summary, and saves only after your spoken confirmation.</p><div className="mt-4 flex flex-wrap items-center gap-3">{conversation.status === "connected" ? <><button className="btn-ghost" onClick={() => conversation.endSession()}>END INTAKE</button><label className="btn-ghost cursor-pointer">{uploading ? "UPLOADING…" : "ADD DOCUMENT"}<input className="sr-only" type="file" accept="application/pdf,image/*,.txt" disabled={uploading} onChange={(event) => void uploadDocument(event)} /></label></> : <button className="btn" disabled={!agentId || conversation.status === "connecting"} onClick={() => void start()}>{conversation.status === "connecting" ? "CONNECTING…" : "START INTAKE"}</button>}<span className="mono text-[10px] uppercase text-charcoal/50">{conversation.status}</span></div>{notice && <p className="mono mt-3 text-[11px] text-charcoal/65">{notice}</p>}</section>;
 }
 
 async function submitBrief(parameters: Brief, onConfirmed: (message: string) => void) {
