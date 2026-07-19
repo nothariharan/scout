@@ -4,16 +4,10 @@
 
 const elevenLabsOutboundUrl = 'https://api.elevenlabs.io/v1/convai/twilio/outbound-call';
 
-function getCallConfiguration(agentId, metadata = {}) {
-  const useFemaleVoice = metadata.caller_gender === 'female' || metadata.caller_voice === 'female';
+function getCallConfiguration(agentId) {
   return {
     apiKey: process.env.ELEVENLABS_API_KEY,
-    // An explicitly supplied agent always wins. Otherwise preserve Manav for
-    // Ramesh/default calls and select Zara's matching negotiator for a female
-    // customer persona.
-    agentId: agentId ?? (useFemaleVoice
-      ? process.env.ELEVENLABS_NEGOTIATOR_FEMALE_AGENT_ID
-      : process.env.ELEVENLABS_NEGOTIATOR_AGENT_ID),
+    agentId: agentId ?? process.env.ELEVENLABS_NEGOTIATOR_AGENT_ID,
     phoneNumberId: process.env.ELEVENLABS_AGENT_PHONE_NUMBER_ID,
   };
 }
@@ -34,7 +28,7 @@ export async function placeCall({ to, agentId, metadata } = {}) {
     return { placed: false, reason: 'missing destination number' };
   }
 
-  const { apiKey, agentId: resolvedAgentId, phoneNumberId } = getCallConfiguration(agentId, metadata);
+  const { apiKey, agentId: resolvedAgentId, phoneNumberId } = getCallConfiguration(agentId);
   if (!apiKey || !resolvedAgentId || !phoneNumberId) {
     return { placed: false, reason: 'ElevenLabs call configuration is incomplete' };
   }
