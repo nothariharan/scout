@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scout — AI Voice Negotiation Agent for Real Estate</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px 24px 100px; line-height: 1.6; color: #1d1d1f; background: #fafafa; }
+  h1 { font-size: 34px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 24px; margin-top: 56px; border-bottom: 2px solid #e5e5e5; padding-bottom: 8px; }
+  h3 { font-size: 18px; margin-top: 28px; color: #333; }
+  .subtitle { color: #666; font-size: 17px; margin-top: 0; }
+  .tag { display: inline-block; background: #eee; border-radius: 20px; padding: 4px 12px; font-size: 13px; margin: 2px 4px 2px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 15px; }
+  th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  .module { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .module h3 { margin-top: 0; }
+  .flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 20px 0; }
+  .box { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  .arrow { font-size: 20px; color: #999; }
+  code { background: #eee; padding: 2px 5px; border-radius: 4px; font-size: 13px; }
+  .note { background: #fff8e6; border-left: 4px solid #e6b800; padding: 10px 14px; font-size: 14px; margin: 12px 0; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Scout — Real Estate Edition</h1>
+<p class="subtitle">An autonomous voice-AI agent that finds, calls, negotiates, and compares real estate deals — rentals, PGs, hostels, flats, and outright property purchases — on the user's behalf.</p>
+
+<div>
+<span class="tag">Voice AI</span>
+<span class="tag">Real Estate</span>
+<span class="tag">Autonomous Negotiation</span>
+<span class="tag">Multilingual Agents</span>
+<span class="tag">Fraud Detection</span>
+<span class="tag">Google Maps Integration</span>
+</div>
+
+<h2>1. What Scout Is</h2>
+<p>Scout is a voice-AI agent that removes the most painful part of finding a place to live or buy: the endless cycle of calling brokers, landlords, PG managers, and hostel wardens, repeating the same requirements, and never knowing if the price you're quoted is fair.</p>
+<p>Instead of a human doing this themselves, Scout runs a structured "interview" with the user to understand exactly what they want, then dispatches a fleet of AI voice agents to call every relevant listing in the target area in parallel — negotiating price, verifying legitimacy, and returning a ranked, side-by-side comparison of real offers, not just listings.</p>
+<p>Think of it as hiring a tireless, incorruptible personal real estate broker who works 24/7, speaks every local language, never gets tired of haggling, and has no incentive to push you toward a specific property (no commission bias).</p>
+
+<h2>2. The Problem in Real Estate Specifically</h2>
+<table>
+<tr><th>Pain Point</th><th>Why It's Worse in Real Estate</th></tr>
+<tr><td>Opaque pricing</td><td>"Quoted rent" vs "actual rent" often differ by brokerage fees, maintenance charges, deposits, and "negotiable" clauses that are never disclosed upfront.</td></tr>
+<tr><td>Repeating requirements</td><td>Every landlord/broker/PG owner needs to hear the same thing: budget, move-in date, duration, furnishing, number of occupants, food preference (for PG/hostel), pet policy.</td></tr>
+<tr><td>Fraud & scams</td><td>Real estate has some of the highest scam rates of any consumer category — fake listings, non-existent properties, "pay a deposit to hold the flat" scams, broker impersonation.</td></tr>
+<tr><td>Broker incentive misalignment</td><td>Brokers are paid by whoever they close the deal for (often the landlord), so their advice to the tenant/buyer is not neutral.</td></tr>
+<tr><td>Location fatigue</td><td>A "good deal" 4km away with a terrible commute is often listed alongside a fair one — users have to manually cross-check every result against a map.</td></tr>
+<tr><td>Language barriers</td><td>Local landlords/PG owners often only speak the regional language, which is a hard wall for students, migrants, or expats.</td></tr>
+<tr><td>Non-binding verbal quotes</td><td>"Rent is ₹15,000 approx" turns into ₹18,000 once you show up, with maintenance and "society charges" added later.</td></tr>
+</table>
+
+<h2>3. Product Architecture — Three Core Modules</h2>
+
+<div class="flow">
+  <div class="box">User</div><div class="arrow">→</div>
+  <div class="box">Module 1: Intake Interview</div><div class="arrow">→</div>
+  <div class="box">Module 2: Discovery + Parallel Negotiation Calls</div><div class="arrow">→</div>
+  <div class="box">Module 3: Comparison, Verification &amp; Recommendation</div><div class="arrow">→</div>
+  <div class="box">User Decision</div>
+</div>
+
+<div class="module">
+<h3>Module 1 — Intake ("The Interview")</h3>
+<p>The first thing a user sees is not a search bar — it's a conversation. A clean, Apple-style interface (minimal, generous whitespace, one question at a time, large tap targets) where the user is "interviewed" by an AI concierge (text or voice) that behaves like a personal registrar/manager, not a form.</p>
+<ul>
+<li><strong>Deal type:</strong> Rent (long-term), PG/hostel (short stay), buy, or lease-to-buy.</li>
+<li><strong>Location &amp; radius:</strong> Pinned via Google Maps; user can set a target area or a commute-time constraint ("under 20 min from X office").</li>
+<li><strong>Budget range:</strong> Hard ceiling vs "ideal" price, and whether they want Scout to negotiate below the ceiling or just verify fairness.</li>
+<li><strong>Specs:</strong> Bedrooms/occupancy, furnishing level, amenities (parking, wifi, food included, gym, security), move-in date, lease duration.</li>
+<li><strong>Document readiness:</strong> "Do you have ID proof / income proof / company letter ready?" — flags which listings will accept the user's paperwork profile instantly.</li>
+<li><strong>Deal-breakers:</strong> No smoking building, pet-friendly required, female-only PG, etc.</li>
+<li><strong>Negotiation posture:</strong> Aggressive (maximize savings, slower), balanced, or fast (accept first fair deal).</li>
+</ul>
+<p>Output of Module 1: a structured JSON "requirement spec" — this is the single source of truth every outbound call will reference, so the user never repeats themselves again.</p>
+</div>
+
+<div class="module">
+<h3>Module 2 — Discovery &amp; Parallel Negotiation ("The Calling Engine")</h3>
+<p>This is Scout's core differentiator: it doesn't just list properties, it calls on them.</p>
+<ul>
+<li><strong>Discovery layer:</strong> Pulls candidate listings from Google Maps Places API, real-estate portal scrapes/APIs (99acres, MagicBricks, NoBroker, Zillow-equivalents depending on geography), and broker/PG directories within the target radius.</li>
+<li><strong>Geofencing filter:</strong> Immediately drops anything outside the commute/distance constraint before a single call is placed — this is where the "nearby real estate" Google Maps check happens, so Scout doesn't waste calls on out-of-range properties.</li>
+<li><strong>Parallel outbound calling:</strong> Dozens of calls fired simultaneously via Twilio (or regional telephony provider), each running the same structured spec from Module 1.</li>
+<li><strong>Multilingual negotiation agents:</strong> Scout detects the language the person on the other end responds in and can dynamically switch the ElevenLabs conversational voice agent to that language/dialect. A separate, more "haggling-tuned" agent persona (assertive, price-anchoring, comfortable with back-and-forth) is used specifically for the negotiation phase, distinct from the friendly intake persona.</li>
+<li><strong>Live negotiation logic:</strong> Agent opens with the requirement spec, asks for the real (not listed) price, cross-references it against Scout's internal pricing benchmark for that micro-area, and counters using competing offers ("we have another unit nearby at ₹X") as leverage — without ever lying about specifics it can't verify.</li>
+<li><strong>Fraud &amp; identity checks during the call:</strong> Agent asks for property registration/RERA number (India) or equivalent, cross-checks the caller's claimed identity against listing platform data, and flags any request for "pre-visit deposit" as high-risk (a very common real estate scam pattern).</li>
+<li><strong>Retry &amp; follow-up:</strong> No-answer or "call back later" outcomes are automatically re-queued; ghosting brokers get a scheduled follow-up call without user involvement.</li>
+</ul>
+</div>
+
+<div class="module">
+<h3>Module 3 — Comparison, Verification &amp; Recommendation</h3>
+<ul>
+<li><strong>Normalized comparison table:</strong> All quotes converted into one standard format — base rent/price, deposit, maintenance, brokerage, included amenities, effective total monthly/total cost.</li>
+<li><strong>Map view:</strong> Every viable result pinned on a map with commute time overlay, so price and location trade-offs are visual, not just numeric.</li>
+<li><strong>Fraud/risk score:</strong> Each listing gets a risk badge — Verified, Caution, or High Risk — based on registration checks, listing-platform cross-references, deposit-request behavior, and inconsistencies between call transcript and listing description.</li>
+<li><strong>Recommendation with reasoning:</strong> Not just "cheapest" — a ranked shortlist with an explanation ("This one is 8% above your budget but 12 min closer and verified; this one is cheapest but flagged for pre-visit deposit request").</li>
+<li><strong>Call transcripts &amp; recordings:</strong> User can listen to or read exactly what was negotiated, building trust in what the AI did on their behalf.</li>
+<li><strong>One-tap next step:</strong> Schedule a site visit, request a virtual video walkthrough, or move straight to a re-negotiation round with the top 2-3 finalists.</li>
+</ul>
+</div>
+
+<h2>4. Fraud &amp; Risk System (Dedicated Layer)</h2>
+<p>Given how scam-prone real estate is, this isn't a feature bolted onto Module 3 — it should be a cross-cutting layer that touches every module.</p>
+<table>
+<tr><th>Signal</th><th>How Scout Detects It</th></tr>
+<tr><td>Fake/duplicate listings</td><td>Cross-reference address, photos, and price against multiple portals; flag listings that appear identical across "different" owners.</td></tr>
+<tr><td>Pre-visit deposit requests</td><td>Negotiation agent is trained to treat any request for payment before a verified visit/contract as an automatic red flag — never authorized to pay or commit funds under any circumstance.</td></tr>
+<tr><td>Unregistered property</td><td>Ask for and validate registration/RERA-style IDs where applicable; absence isn't disqualifying but lowers the trust score.</td></tr>
+<tr><td>Identity mismatch</td><td>Compare the name/entity on the call to the name on the listing platform and property records where public data exists.</td></tr>
+<tr><td>Pressure tactics</td><td>NLP layer on the transcript flags urgency/scarcity language ("only today", "someone else is paying now") common in scam scripts.</td></tr>
+<tr><td>Community signals</td><td>Aggregate anonymized outcomes across all Scout users — a broker/owner who scams one user gets flagged for all future users automatically (the network-effect data moat).</td></tr>
+</table>
+<div class="note">Legal note: Scout's agent must never be authorized to transfer money, sign anything, or make a binding verbal commitment on the user's behalf. Its role is strictly informational/negotiational — final commitment always requires explicit user action.</div>
+
+<h2>5. UI / UX Principles</h2>
+<ul>
+<li><strong>Conversation-first, not form-first:</strong> One question at a time, natural language allowed as an escape hatch ("just tell me what you need and I'll fill in the form").</li>
+<li><strong>Apple-like minimalism:</strong> Generous whitespace, large legible type, few colors, motion used sparingly to indicate progress (e.g. a live "Scout is calling 14 properties near you..." progress state).</li>
+<li><strong>Transparency by default:</strong> Every AI action (a call placed, a counteroffer made) should be visible in a live activity feed, not hidden — this directly targets the "will I trust an AI to negotiate for me" hurdle.</li>
+<li><strong>Listen-in option:</strong> Let anxious users optionally listen to a call live or immediately after, especially valuable for older or first-time users.</li>
+<li><strong>Map as a first-class citizen:</strong> Since location is central to real estate (unlike moving/plumbing verticals), the map view should be as prominent as the comparison table, not an afterthought.</li>
+</ul>
+
+<h2>6. Technology Stack</h2>
+<table>
+<tr><th>Layer</th><th>Tooling</th></tr>
+<tr><td>Telephony</td><td>Twilio (or regional equivalent for reliable local number dialing)</td></tr>
+<tr><td>Voice synthesis / conversational agent</td><td>ElevenLabs Conversational AI — two custom agent personas: "Intake Concierge" (warm, structured) and "Negotiator" (assertive, price-anchoring), each with per-language voice configs</td></tr>
+<tr><td>Speech-to-text</td><td>Whisper or equivalent real-time ASR, tuned for regional accents/languages</td></tr>
+<tr><td>LLM / reasoning core</td><td>GPT-4-class model for spec extraction, negotiation strategy, quote parsing, and fraud-signal reasoning</td></tr>
+<tr><td>Location &amp; mapping</td><td>Google Maps Platform (Places API, Distance Matrix API for commute-time filtering, geocoding)</td></tr>
+<tr><td>Listing discovery</td><td>Partnered/scraped data from regional real estate portals + broker directories</td></tr>
+<tr><td>Pricing benchmark DB</td><td>Internal database built over time from negotiated outcomes, used to give the agent a "fair price" anchor before it even calls</td></tr>
+<tr><td>Identity/fraud checks</td><td>Public registration record lookups (RERA-equivalent), cross-portal listing matching, transcript NLP for scam-pattern detection</td></tr>
+<tr><td>Storage &amp; compliance</td><td>Encrypted call recording storage, region-specific retention rules for GDPR/local privacy law</td></tr>
+</table>
+
+<h2>7. MVP Feature List (Build First)</h2>
+<ul>
+<li>Structured conversational intake (text-based to start, voice later)</li>
+<li>Google Maps radius + commute-time filtering</li>
+<li>Parallel outbound calling to a first batch (5–10) of listings/PGs in one city</li>
+<li>Single-language negotiation agent (expand to multilingual post-MVP)</li>
+<li>Basic quote normalization + comparison table</li>
+<li>Manual fraud checklist (registration ID ask, deposit-request flag) before full automated scoring</li>
+<li>Call transcript log visible to user</li>
+</ul>
+
+<h2>8. Post-MVP / Future Features</h2>
+<ul>
+<li>Multilingual auto-switching negotiation agent (detect language mid-call and swap persona)</li>
+<li>Automated fraud scoring engine with cross-portal duplicate detection</li>
+<li>Live "listen-in" mode for ongoing calls</li>
+<li>Virtual walkthrough scheduling (video call with landlord/PG owner arranged automatically)</li>
+<li>Pricing benchmark dashboard, publicly shareable ("average 1BHK rent in this pincode") to build trust and SEO</li>
+<li>Recurring/subscription mode for property managers or relocation agencies managing many searches at once</li>
+<li>Document parsing: user uploads a rental agreement or listing screenshot; AI extracts terms automatically</li>
+<li>Re-negotiation rounds: after initial comparison, auto-trigger a second round of calls to the top 2–3 finalists using competing offers as leverage</li>
+<li>API/white-label version for relocation companies, corporate HR (employee housing), and student housing platforms</li>
+</ul>
+
+<h2>9. Legal &amp; Compliance Notes (Real Estate Specific)</h2>
+<ul>
+<li>AI-call disclosure required upfront in many jurisdictions — Scout's agent should state it's an automated assistant calling on behalf of a client.</li>
+<li>Call recording consent laws vary by region/state — must be configured per geography.</li>
+<li>The AI agent must never be authorized to sign, commit funds, or make binding verbal agreements — always "subject to client confirmation."</li>
+<li>Real estate is often separately regulated (brokerage licensing laws in some regions) — confirm Scout's role is "informational negotiation assistant," not acting as a licensed broker, to stay out of regulated territory initially.</li>
+<li>Data privacy: user financial/document details (income proof, ID) must be handled under strict encryption and regional privacy law (GDPR, local equivalents).</li>
+</ul>
+
+<h2>10. Why This Wins</h2>
+<ul>
+<li>Real estate is one of the highest-stakes, highest-anxiety purchase categories that still runs almost entirely on phone calls and word-of-mouth — ripe for the exact gap Scout fills.</li>
+<li>The fraud/scam angle is uniquely severe in real estate compared to other verticals (moving, plumbing), making the risk-scoring layer a genuine differentiator, not just a nice-to-have.</li>
+<li>Location is a first-class variable here in a way it isn't for other verticals — Scout's Maps-native filtering is a natural fit and hard for generic voice-AI platforms to replicate.</li>
+<li>Every negotiated call adds to a proprietary pricing-benchmark dataset — the longer Scout runs in a city, the smarter and faster its negotiation gets, creating a compounding data moat.</li>
+</ul>
+
+</body>
+</html>

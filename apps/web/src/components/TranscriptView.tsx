@@ -34,7 +34,7 @@ export function TranscriptView({
             id={`line-${l.index}`}
             key={l.index}
             className="scroll-mt-24 rounded-md px-2.5 py-2"
-            style={flagged ? { background: "#f4ddd3" } : undefined}
+            style={flagged ? { background: "var(--red-bg)" } : undefined}
           >
             <div className="flex items-center gap-2">
               <span
@@ -48,7 +48,7 @@ export function TranscriptView({
             </div>
             <p
               className="mt-0.5 text-sm leading-relaxed"
-              style={{ color: isScout ? "var(--charcoal)" : "#6b6459" }}
+              style={{ color: isScout ? "var(--charcoal)" : "var(--secondary)" }}
             >
               {l.text}
             </p>

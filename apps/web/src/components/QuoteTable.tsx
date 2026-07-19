@@ -42,7 +42,7 @@ export function QuoteTable({
                 key={q.listing_id}
                 style={{
                   borderBottom: "1px solid var(--line)",
-                  background: top ? "var(--sage-bg)" : "#fff",
+                  background: top ? "var(--sage-bg)" : "transparent",
                 }}
               >
                 <td className="mono px-3 py-3 text-charcoal/45">{i + 1}</td>
@@ -63,7 +63,7 @@ export function QuoteTable({
                 <td className="px-3 py-3 text-right">
                   <div
                     className="mono font-medium"
-                    style={{ color: overBudget ? "var(--rust)" : "var(--ink)" }}
+                    style={{ color: overBudget ? "var(--red)" : "var(--ink)" }}
                   >
                     {inr(q.effective_monthly_cost)}
                   </div>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Legacy report links no longer render rental demo data. */
+/** Requirement-specific links use the unified results state. */
 export default function ReportRedirect() {
-  redirect("/moving/report");
+  redirect("/report");
 }

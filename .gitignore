@@ -5,6 +5,10 @@ dist/
 .next/
 .next-*/
 coverage/
+__pycache__/
+output/
+*.tsbuildinfo
+.vercel/
 
 # Environment and secrets
 .env

@@ -60,7 +60,6 @@ def intake_tools():
     required = ["deal_type", "area", "city", "budget_ideal", "budget_ceiling", "currency", "occupancy", "furnishing", "move_in_date", "lease_duration_months"]
     return system_tools() + [{"type": "client", "name": "submit_real_estate_brief", "description": "Call exactly once after the user confirms the complete factual property brief. Never invent a missing value.", "expects_response": True, "parameters": {"type": "object", "required": required, "properties": props}}]
 
-
 def config(definition):
     multilingual = definition.get("language") == "hi"
     # Sonnet 4.6 is used for the stateful negotiation call. Explicitly

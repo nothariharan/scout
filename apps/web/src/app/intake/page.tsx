@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** The original intake link is the voice-first property interview. */
+/** Legacy intake links now enter the universal outcome flow. */
 export default function IntakeRedirect() {
-  redirect("/real-estate");
+  redirect("/delegate");
 }

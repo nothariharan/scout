@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scout — Building the Intelligent Multilingual Negotiator</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; max-width: 920px; margin: 0 auto; padding: 40px 24px 120px; line-height: 1.65; color: #1d1d1f; background: #fafafa; }
+  h1 { font-size: 34px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 25px; margin-top: 60px; border-bottom: 2px solid #e5e5e5; padding-bottom: 8px; }
+  h3 { font-size: 19px; margin-top: 30px; color: #222; }
+  h4 { font-size: 16px; margin-top: 20px; color: #444; }
+  .subtitle { color: #666; font-size: 17px; margin-top: 0; }
+  .tag { display: inline-block; background: #eee; border-radius: 20px; padding: 4px 12px; font-size: 13px; margin: 2px 4px 2px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
+  th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  .module { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 22px; margin: 18px 0; }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0; }
+  .box { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 8px 12px; font-size: 13.5px; }
+  .arrow { font-size: 18px; color: #999; }
+  code { background: #eee; padding: 2px 5px; border-radius: 4px; font-size: 13px; }
+  .note { background: #fff8e6; border-left: 4px solid #e6b800; padding: 10px 14px; font-size: 14px; margin: 14px 0; }
+  .tip { background: #e9f5ff; border-left: 4px solid #3399ff; padding: 10px 14px; font-size: 14px; margin: 14px 0; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  .toc { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px 26px; }
+  .toc a { color: #0066cc; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>Building the Intelligent Negotiator</h1>
+<p class="subtitle">A deep-dive into making Scout's voice agent a genuinely capable negotiator — multilingual, location-aware, culturally adaptive, and strategically smart — plus a full list of architecture and API enhancements.</p>
+
+<div>
+<span class="tag">Multilingual Voice AI</span>
+<span class="tag">ElevenLabs Conversational AI</span>
+<span class="tag">Negotiation Strategy</span>
+<span class="tag">Real-Time Language Detection</span>
+<span class="tag">Agent Orchestration</span>
+</div>
+
+<div class="toc">
+<strong>Contents</strong>
+<ol>
+<li><a href="#part1">The Core Problem: What Makes a Negotiator "Intelligent"?</a></li>
+<li><a href="#part2">Language Intelligence — Detecting, Switching, and Speaking Like a Local</a></li>
+<li><a href="#part3">Building the Negotiator on ElevenLabs</a></li>
+<li><a href="#part4">Negotiation Strategy Engine — Giving the Agent an Actual Playbook</a></li>
+<li><a href="#part5">Multi-Agent Architecture — Splitting the Brain Into Specialists</a></li>
+<li><a href="#part6">APIs & External Data That Make the Agent Smarter</a></li>
+<li><a href="#part7">Memory, Learning & the Pricing Benchmark Moat</a></li>
+<li><a href="#part8">Handling Hard Conversational Reality (Interruptions, Silence, Accents)</a></li>
+<li><a href="#part9">Trust, Safety & Cultural Sensitivity in Negotiation</a></li>
+<li><a href="#part10">Evaluation — How Do We Know the Agent Is Actually Good at Negotiating?</a></li>
+<li><a href="#part11">Full Enhancement List — Every Feature Worth Considering</a></li>
+<li><a href="#part12">Suggested Build Roadmap</a></li>
+</ol>
+</div>
+
+<h2 id="part1">1. The Core Problem: What Makes a Negotiator "Intelligent"?</h2>
+<p>A scripted voice bot can ask questions and record answers. A negotiator has to do something much harder: it has to <em>read the room</em>, decide when to push and when to concede, know what "reasonable" looks like in the specific market it's operating in, and communicate all of that in the other person's own language and tone — without ever sounding like it's reading from a script.</p>
+<p>There are really four separate layers of intelligence stacked on top of each other, and each one needs its own design:</p>
+<table>
+<tr><th>Layer</th><th>What it does</th><th>Fails if...</th></tr>
+<tr><td>Linguistic intelligence</td><td>Understands and speaks the right language/dialect, at the right register (formal vs casual)</td><td>It defaults to English/robotic phrasing and the other party disengages</td></tr>
+<tr><td>Domain intelligence</td><td>Knows what a fair price/deal looks like in that specific micro-market</td><td>It negotiates blindly and either overpays or insults the other party with a lowball</td></tr>
+<tr><td>Strategic intelligence</td><td>Knows negotiation tactics — anchoring, concession patterns, when to walk away, when to use leverage</td><td>It just asks "can you do better?" once and gives up, or pushes too hard and the vendor hangs up</td></tr>
+<tr><td>Social intelligence</td><td>Reads tone, hesitation, irritation, and adapts pacing and politeness accordingly</td><td>It sounds robotic, pushy, or oblivious to social cues, damaging trust in the brand</td></tr>
+</table>
+<p>The rest of this document is essentially a plan for building each of these four layers properly, plus the plumbing (APIs, architecture) that supports them.</p>
+
+<h2 id="part2">2. Language Intelligence — Detecting, Switching, and Speaking Like a Local</h2>
+
+<h3>2.1 The Problem With "Just Detect the Language Mid-Call"</h3>
+<p>Pure real-time language detection (waiting for the other person to speak, then reacting) is the fallback, not the primary strategy — it costs you the first few seconds of the call, which is exactly when first impressions matter most in a negotiation. A better system layers <strong>three passes</strong> of language selection, from cheapest/fastest to most precise:</p>
+
+<h4>Pass 1 — Pre-call prediction (before the phone even rings)</h4>
+<ul>
+<li><strong>Geolocation-based prior:</strong> Use the property/business address (already known from Module 2 discovery) plus a maintained mapping of <em>region → dominant local language(s)</em>. This isn't just "country → language" — it needs to be granular to state/city/even neighborhood level (e.g. a listing in Chennai should default to Tamil, not generic "Indian English"; a listing in rural Wales might default to Welsh-accented English, not standard English).</li>
+<li><strong>Business-type prior:</strong> Independent PG owners/local brokers skew toward regional language; branded/corporate real estate firms skew toward English or the national business language. Feed listing metadata (company vs individual, portal used) into the predictor.</li>
+<li><strong>Caller-number prior:</strong> Area code / carrier region can refine the geolocation guess further.</li>
+<li>Combine these into a <strong>ranked language list</strong> per call (e.g. Tamil 70%, English 25%, Hindi 5%) so the agent opens in the highest-probability language but is primed to fall back instantly.</li>
+</ul>
+
+<h4>Pass 2 — Opening-line detection (first 3–5 seconds of the call)</h4>
+<ul>
+<li>Agent opens with a short, universally-understood greeting plus a soft language probe: e.g. greet in the predicted local language, and if the response comes back in a different language, the ASR's language-ID output triggers an immediate voice/model switch <em>before</em> the substantive negotiation begins.</li>
+<li>Use an ASR provider with built-in streaming language identification (not just transcription) so the switch decision doesn't require a separate, slower classification call.</li>
+</ul>
+
+<h4>Pass 3 — Continuous in-call monitoring</h4>
+<ul>
+<li>Real bilingual/multilingual speakers code-switch mid-sentence often (e.g. Hindi-English "Hinglish", Spanish-English "Spanglish", Tamil-English mixing). The agent shouldn't rigidly lock to one language — it should be able to mirror code-switching naturally, matching the other person's mix rather than forcing pure single-language responses.</li>
+<li>If the ASR confidence for the current language drops (garbled transcription, repeated "can you repeat that" from the other party), treat that as a signal to re-run language detection rather than assuming it's just background noise.</li>
+</ul>
+
+<h3>2.2 Speaking Like a Local, Not Just "In That Language"</h3>
+<p>Correct language isn't enough — a negotiator that sounds like a translated script is still going to feel foreign and untrustworthy. A few techniques matter here:</p>
+<ul>
+<li><strong>Register matching:</strong> Formal/polite phrasing for older or more traditional vendors, casual/direct phrasing for younger urban vendors. This can be inferred from the vendor's own speech formality and mirrored.</li>
+<li><strong>Idiomatic negotiation phrases per language:</strong> "Can you do better on this?" translates literally in most languages but sounds stilted. Maintain a per-language, per-region library of natural negotiation phrasing (built from real call transcripts once you have data) instead of relying purely on live LLM translation.</li>
+<li><strong>Local numeric/currency conventions:</strong> Lakhs/crores vs thousands/millions, comma placement, regional slang for money ("k", "lakh", "grand").</li>
+<li><strong>Accent-appropriate TTS:</strong> Not just "Spanish" but Mexican Spanish vs Castilian Spanish; not just "English" but Indian English vs British English vs American English — ElevenLabs' voice library and voice design tools support this granularity and it should be treated as a first-class configuration, not an afterthought.</li>
+</ul>
+
+<h3>2.3 Location-Based Language Auto-Configuration — The Actual Pipeline</h3>
+<div class="flow">
+<div class="box">Listing address (lat/lng)</div><div class="arrow">→</div>
+<div class="box">Reverse geocode → region/locality</div><div class="arrow">→</div>
+<div class="box">Region → language-prior lookup table</div><div class="arrow">→</div>
+<div class="box">Select ElevenLabs voice + language config</div><div class="arrow">→</div>
+<div class="box">Load region-specific negotiation phrase library</div><div class="arrow">→</div>
+<div class="box">Place call, ready to fall back per Pass 2/3</div>
+</div>
+<p>This lookup table (region → language priors) is itself a valuable internal asset worth building carefully and refining over time as call data comes in — mismatches (predicted Tamil, actual Telugu) should be logged and fed back to correct the table.</p>
+
+<h2 id="part3">3. Building the Negotiator on ElevenLabs</h2>
+
+<h3>3.1 Two Distinct Agent Personas, Not One</h3>
+<p>As outlined previously, Scout should run at least two ElevenLabs Conversational AI agent configurations:</p>
+<table>
+<tr><th></th><th>Intake Concierge</th><th>Negotiator</th></tr>
+<tr><td>Tone</td><td>Warm, patient, exploratory</td><td>Confident, efficient, mildly assertive</td></tr>
+<tr><td>Pacing</td><td>Slower, allows user to think</td><td>Brisker, keeps momentum, doesn't over-explain</td></tr>
+<tr><td>Goal</td><td>Extract complete, accurate requirements</td><td>Extract real price + push for a better one</td></tr>
+<tr><td>Voice</td><td>Friendly, approachable voice design</td><td>Slightly more authoritative voice design</td></tr>
+</table>
+<p>These should be genuinely separate agent configs (separate system prompts, separate voice IDs, possibly separate underlying LLM temperature settings) rather than one agent trying to do both — mixing "helpful assistant" and "hard negotiator" tone in a single persona tends to produce a wishy-washy middle ground that's bad at both.</p>
+
+<h3>3.2 Custom Voice Design</h3>
+<ul>
+<li>Use ElevenLabs' voice design/cloning tools to create a small library of negotiator voices — ideally one natural-sounding voice per major language/region rather than a single voice run through translation, since accent authenticity matters a lot for trust.</li>
+<li>A/B test voice options with real users early: "does this voice sound trustworthy / competent / like it's negotiating on my behalf" — voice choice materially affects vendor cooperation rates, not just user perception.</li>
+<li>Keep voice consistent per persona across calls in the same negotiation (don't randomize) — vendors who get called back for a follow-up should hear the same "person" they spoke to before, which also matters for continuity and trust.</li>
+</ul>
+
+<h3>3.3 Conversational Design Details Worth Getting Right</h3>
+<ul>
+<li><strong>Turn-taking / interruption handling:</strong> Real negotiations involve people talking over each other, especially when a vendor gets defensive about price. The agent needs graceful interrupt handling — stop speaking immediately when interrupted, don't repeat the interrupted sentence verbatim, acknowledge what was just said.</li>
+<li><strong>Latency budget:</strong> Long pauses before the agent responds instantly signal "this is a bot" to attentive listeners. Aim for sub-second response latency by keeping the negotiation LLM call lean (see multi-agent architecture below — offload complex reasoning to a background planner, not the live turn-response model).</li>
+<li><strong>Filler/backchannel behavior:</strong> Natural "mm-hmm", brief acknowledgments while the other party is talking, small pauses before answering hard questions — these details make a large perceived difference in "human-ness" without needing a smarter model.</li>
+<li><strong>Graceful degradation:</strong> If ASR confidence is low or the LLM is uncertain, the agent should default to a clarifying question rather than guessing and negotiating on a misheard number — a misheard price is the single worst failure mode for a negotiation agent.</li>
+</ul>
+
+<h2 id="part4">4. Negotiation Strategy Engine — Giving the Agent an Actual Playbook</h2>
+<p>This is the layer most competitors skip entirely (per the market research — voice AI platforms provide the pipes, not negotiation logic). This is where Scout's real differentiation lives.</p>
+
+<h3>4.1 Core Negotiation Primitives to Encode</h3>
+<ul>
+<li><strong>Anchoring:</strong> If the agent has a pricing benchmark for the area, it should reference it early ("similar units nearby are going for around X") rather than accepting the first number as the anchor.</li>
+<li><strong>Reserve price / walk-away point:</strong> Set from the user's stated budget ceiling in Module 1. The agent should never negotiate past this, and should clearly signal when a deal is outside range rather than pushing forward anyway.</li>
+<li><strong>Concession pacing:</strong> Real negotiators don't concede in one big jump — they make progressively smaller concessions, which signals "this is close to my limit." The strategy engine should encode this pattern rather than a flat "ask once for a discount" behavior.</li>
+<li><strong>Leverage use:</strong> Reference genuinely competing offers Scout is gathering in parallel ("we have another unit in the same building available") — but this must be truthful. Never fabricate a competing offer that doesn't exist; that's a legal and trust liability, and it stops being negotiation and becomes fraud.</li>
+<li><strong>Bundling &amp; trade-offs:</strong> Sometimes the best "discount" isn't on price but on terms (waived brokerage, included maintenance, flexible move-in date). Train the agent to explore trade-space, not just push on the single number.</li>
+<li><strong>Silence as a tool:</strong> Skilled human negotiators let silence sit after asking for a better price rather than immediately filling it. This is a deliberately encoded pacing behavior, not a bug to fix.</li>
+</ul>
+
+<h3>4.2 A Simple State Machine for the Negotiation Phase</h3>
+<div class="flow">
+<div class="box">Open / Rapport</div><div class="arrow">→</div>
+<div class="box">Confirm listing details</div><div class="arrow">→</div>
+<div class="box">Elicit real price</div><div class="arrow">→</div>
+<div class="box">Anchor / present benchmark</div><div class="arrow">→</div>
+<div class="box">Counter-offer round(s)</div><div class="arrow">→</div>
+<div class="box">Close or defer</div>
+</div>
+<p>Each state has its own micro-goals and exit conditions, and the LLM prompt for each state should be scoped narrowly (a "counter-offer round" prompt is very different from an "elicit real price" prompt) rather than one giant system prompt trying to handle the whole call — this also keeps latency down since each state's prompt is smaller.</p>
+
+<h3>4.3 Configurable Negotiation "Posture" (from Module 1)</h3>
+<p>The user's chosen posture (aggressive / balanced / fast) should map to concrete parameter changes in the strategy engine — number of counter-offer rounds attempted, how much below listed price to target, willingness to walk away and call back later vs. close now — not just a vague tone instruction to the LLM.</p>
+
+<h2 id="part5">5. Multi-Agent Architecture — Splitting the Brain Into Specialists</h2>
+<p>A single monolithic LLM trying to handle ASR interpretation, negotiation strategy, fraud detection, and natural conversation simultaneously will be slow and inconsistent. A cleaner architecture splits responsibilities:</p>
+<table>
+<tr><th>Agent</th><th>Responsibility</th><th>Runs when</th></tr>
+<tr><td><strong>Conversational Agent</strong> (the "voice")</td><td>Real-time turn-by-turn dialogue, low latency, natural phrasing</td><td>Live, every turn</td></tr>
+<tr><td><strong>Strategy Planner</strong></td><td>Decides negotiation state transitions, target price, when to concede/hold</td><td>Async, updates every 1-2 turns, feeds decisions to Conversational Agent as structured guidance rather than raw text</td></tr>
+<tr><td><strong>Fraud/Risk Monitor</strong></td><td>Watches transcript for scam patterns, verifies claims against known data, raises flags</td><td>Async, runs continuously in background during the call</td></tr>
+<tr><td><strong>Pricing Analyst</strong></td><td>Supplies live benchmark data for the specific micro-area, updates as new area data comes in</td><td>Called once at call start, refreshed if the conversation reveals new specifics (e.g. floor number, view, exact sq ft)</td></tr>
+<tr><td><strong>Post-Call Summarizer</strong></td><td>Extracts structured outcome (final price, terms, red flags) from the transcript for Module 3</td><td>After call ends</td></tr>
+</table>
+<p>This separation means the live voice agent only ever needs to generate the <em>next thing to say</em>, informed by structured guidance from the planner — keeping latency low — while the heavier reasoning (strategy, fraud scoring) happens in parallel without blocking the conversation.</p>
+
+<h2 id="part6">6. APIs & External Data That Make the Agent Smarter</h2>
+<table>
+<tr><th>Capability</th><th>API / Data Source</th><th>Why it matters</th></tr>
+<tr><td>Telephony</td><td>Twilio Voice, or regional carriers where Twilio coverage/pricing is weak</td><td>Reliable local-number dialing improves pickup rates vs. calls that appear as international/spam</td></tr>
+<tr><td>Conversational voice</td><td>ElevenLabs Conversational AI (agents, voice design, multilingual TTS)</td><td>Core voice + persona layer</td></tr>
+<tr><td>Real-time ASR + language ID</td><td>Whisper-class streaming ASR, or provider with built-in language identification</td><td>Enables Pass 2/3 language detection without extra round-trips</td></tr>
+<tr><td>Machine translation (fallback)</td><td>DeepL / Google Translate API</td><td>Backstop for languages without a fully-trained negotiation phrase library yet</td></tr>
+<tr><td>Geolocation &amp; mapping</td><td>Google Maps Platform — Geocoding, Places, Distance Matrix</td><td>Location-based language prediction, commute-time filtering, nearby-listing discovery</td></tr>
+<tr><td>Property/business verification</td><td>Regional business registries, RERA-equivalent property registration lookups</td><td>Fraud detection layer</td></tr>
+<tr><td>Sentiment / tone analysis</td><td>Prosody-aware ASR output or a lightweight audio sentiment classifier</td><td>Lets the agent detect irritation/hesitation and adjust pacing/politeness mid-call</td></tr>
+<tr><td>CRM / calendar</td><td>Google Calendar API, or an internal scheduling service</td><td>Auto-book site visits or callback windows without user involvement</td></tr>
+<tr><td>Payments (future, careful rollout)</td><td>Stripe/regional payment rails</td><td>Only for verified, user-authorized deposit holds — never agent-initiated</td></tr>
+<tr><td>OCR / document parsing</td><td>Google Document AI or similar</td><td>Parse uploaded rental agreements, ID documents, income proof for faster listing matching</td></tr>
+</table>
+
+<h2 id="part7">7. Memory, Learning &amp; the Pricing Benchmark Moat</h2>
+<ul>
+<li><strong>Per-negotiation memory:</strong> Within a single user's search, the agent should remember what it learned from earlier calls (e.g. "the going rate in this building is X") and use it to inform later calls in the same session — this is short-term working memory, not full RAG.</li>
+<li><strong>Cross-user pricing benchmark database:</strong> Every completed negotiation (final price, area, property type, date) becomes a data point in an internal benchmark database, geo-indexed down to neighborhood/building level where possible. Over time this lets the Pricing Analyst agent open a call already knowing the fair-price range, rather than guessing from listed price alone.</li>
+<li><strong>Vendor history:</strong> If Scout has called a specific landlord/broker/PG before (even for a different user), retain a lightweight profile — typical negotiation flexibility, red flags raised previously, preferred language — and feed it into the next call's planner.</li>
+<li><strong>Phrase library learning:</strong> Real transcripts of what worked (led to a successful concession) vs. what didn't should periodically be reviewed (human-in-the-loop initially) to refine the per-language negotiation phrase library described in section 2.2.</li>
+<li><strong>Outcome feedback loop:</strong> After a deal closes (or a user declines all offers), ask the user a quick feedback question — was the price actually fair, did anything feel off about a specific call — and feed that back into both the pricing benchmark and the fraud-risk model.</li>
+</ul>
+<div class="tip">This benchmark database is arguably Scout's most defensible long-term asset — it's the thing a new competitor can't replicate on day one no matter how good their voice AI is, because it only exists after thousands of real negotiated calls.</div>
+
+<h2 id="part8">8. Handling Hard Conversational Reality</h2>
+<ul>
+<li><strong>Background noise / bad phone lines:</strong> Common with mobile calls to small vendors. Use noise-robust ASR and have the agent politely ask for repeats rather than guessing, especially on any number mentioned.</li>
+<li><strong>Multiple people on the other end:</strong> A PG owner might hand the phone to a manager mid-call. Detect a voice/speaker change (diarization) and have the agent briefly re-confirm context ("just to recap, we were discussing...") rather than assuming continuity.</li>
+<li><strong>Hostile or suspicious responses ("are you a robot?"):</strong> Have a clear, honest, non-evasive response ready — per the compliance notes, disclosure is often legally required anyway, and an evasive answer damages trust more than an honest one. A good line: openly acknowledging it's an automated assistant calling on behalf of a specific client, said naturally rather than as a legal disclaimer dump.</li>
+<li><strong>Dead air / long holds:</strong> If the other party puts the phone down or goes silent for an extended period, the agent should have a graceful timeout and re-engagement behavior rather than talking into silence indefinitely.</li>
+<li><strong>Emotional vendors:</strong> Elderly landlords or small independent owners may be less comfortable with a fast, transactional style. The social-intelligence layer (section 1) should let the agent slow down and add more warmth when it detects hesitation or confusion, rather than applying one fixed pace to everyone.</li>
+</ul>
+
+<h2 id="part9">9. Trust, Safety &amp; Cultural Sensitivity in Negotiation</h2>
+<ul>
+<li><strong>Never fabricate:</strong> No invented competing offers, no false claims about the user's identity or urgency. This is both an ethical line and a legal necessity — fabricated leverage claims can constitute fraud.</li>
+<li><strong>Cultural negotiation norms differ:</strong> Direct price-pushing that's normal in some markets can be considered rude or aggressive in others, where negotiation happens more indirectly (through relationship-building, hinting, or third parties). The strategy engine's "posture" parameters should have regional defaults, not a single global default, tuned from local negotiation norms.</li>
+<li><strong>Respect explicit refusals:</strong> If a vendor firmly says the price is final, the agent should accept that gracefully after at most one respectful follow-up, not loop indefinitely — repeated pushing after a clear "no" damages both the immediate relationship and Scout's reputation with that vendor for future calls.</li>
+<li><strong>Data handling:</strong> Any personal details shared by the vendor during the call (name, alternate numbers, personal circumstances) should be handled under the same privacy standards as user data, not just logged freely.</li>
+</ul>
+
+<h2 id="part10">10. Evaluation — How Do We Know the Agent Is Actually Good at Negotiating?</h2>
+<table>
+<tr><th>Metric</th><th>What it tells you</th></tr>
+<tr><td>Pickup / engagement rate</td><td>Are calls even connecting and holding attention past the first 10 seconds?</td></tr>
+<tr><td>Completion rate</td><td>Of connected calls, how many reach a clear price outcome vs. end in confusion or hang-up?</td></tr>
+<tr><td>Price improvement vs. listed price</td><td>The direct measure of negotiation effectiveness</td></tr>
+<tr><td>Price improvement vs. benchmark</td><td>Controls for the case where listed price was already fair or already inflated</td></tr>
+<tr><td>Language-switch accuracy</td><td>How often does the agent correctly identify and switch to the right language within the target latency window?</td></tr>
+<tr><td>Vendor sentiment (post-call, if surveyed)</td><td>Are vendors willing to be called by Scout again, or do they blacklist the number?</td></tr>
+<tr><td>Fraud flags precision/recall</td><td>Is the risk-scoring system catching real scams without over-flagging legitimate listings?</td></tr>
+<tr><td>User trust score</td><td>Post-negotiation survey: did the user feel the agent represented them well?</td></tr>
+</table>
+<p>Recommend building a "negotiation replay" internal tool early — the ability to listen back to transcripts, tag good/bad moments, and use that tagged data both for prompt iteration and eventually for fine-tuning or few-shot example curation.</p>
+
+<h2 id="part11">11. Full Enhancement List — Every Feature Worth Considering</h2>
+
+<div class="module">
+<h4>Language &amp; Voice</h4>
+<ul>
+<li>Location-based language prediction (region + business-type priors)</li>
+<li>Real-time streaming language identification with sub-second switch</li>
+<li>Mid-sentence code-switch mirroring (Hinglish, Spanglish, etc.)</li>
+<li>Region-specific accent selection within a language (not just "Spanish" but which Spanish)</li>
+<li>Custom voice design per persona per region via ElevenLabs voice lab</li>
+<li>Per-language idiomatic negotiation phrase libraries (not literal translation)</li>
+<li>Register/formality matching based on vendor's own speech style</li>
+<li>Prosody/sentiment detection from voice tone, not just words</li>
+<li>Natural backchanneling and filler behavior for human-likeness</li>
+<li>Speaker diarization to detect when a different person picks up mid-call</li>
+</ul>
+</div>
+
+<div class="module">
+<h4>Negotiation Strategy</h4>
+<ul>
+<li>Configurable negotiation posture (aggressive/balanced/fast) mapped to concrete parameters</li>
+<li>Anchoring using live pricing benchmarks</li>
+<li>Progressive concession pacing instead of single flat asks</li>
+<li>Truthful leverage use from real parallel offers</li>
+<li>Trade-space exploration (terms/amenities, not just price)</li>
+<li>Configurable walk-away / reserve price enforcement</li>
+<li>Silence-as-tactic pacing</li>
+<li>Region-specific negotiation-norm defaults (direct vs indirect cultures)</li>
+<li>Multi-round re-negotiation with finalists after initial comparison</li>
+</ul>
+</div>
+
+<div class="module">
+<h4>Architecture</h4>
+<ul>
+<li>Split multi-agent design: Conversational / Strategy Planner / Fraud Monitor / Pricing Analyst / Summarizer</li>
+<li>Async background reasoning feeding structured guidance to the live voice agent (keeps latency low)</li>
+<li>Per-negotiation short-term memory across a user's batch of calls</li>
+<li>Cross-user pricing benchmark database, geo-indexed to neighborhood/building level</li>
+<li>Vendor history profiles (flexibility, red flags, preferred language) reused across future calls</li>
+<li>Human-in-the-loop transcript review pipeline to refine phrase libraries and prompts</li>
+<li>Graceful degradation rules (clarify rather than guess on any number or key fact)</li>
+</ul>
+</div>
+
+<div class="module">
+<h4>APIs &amp; Integrations</h4>
+<ul>
+<li>Twilio (or regional telephony) for reliable local dialing</li>
+<li>ElevenLabs Conversational AI for voice + persona</li>
+<li>Streaming ASR with built-in language ID</li>
+<li>Google Maps Platform (Geocoding, Places, Distance Matrix) for location intelligence</li>
+<li>Machine translation API as a fallback for under-resourced languages</li>
+<li>Property/business registry lookups for fraud verification</li>
+<li>Document AI / OCR for parsing uploaded agreements and ID documents</li>
+<li>Calendar API for automatic visit/callback scheduling</li>
+<li>Sentiment/prosody analysis for tone-adaptive pacing</li>
+</ul>
+</div>
+
+<div class="module">
+<h4>Trust, Safety &amp; Fraud</h4>
+<ul>
+<li>Mandatory AI-disclosure line, delivered naturally rather than as a legal dump</li>
+<li>Hard rule: never fabricate competing offers or claims</li>
+<li>Hard rule: never authorize payment or binding commitment during a call</li>
+<li>Real-time scam-pattern detection (pressure tactics, pre-visit deposit requests)</li>
+<li>Cross-portal duplicate-listing detection</li>
+<li>Community-sourced vendor risk flagging (network effect across all Scout users)</li>
+<li>Respectful, bounded persistence — stop pushing after a clear final "no"</li>
+</ul>
+</div>
+
+<div class="module">
+<h4>User-Facing Trust Features</h4>
+<ul>
+<li>Live "listen-in" mode for anxious or first-time users</li>
+<li>Full call transcripts and recordings available post-call</li>
+<li>Live activity feed showing calls in progress and outcomes as they land</li>
+<li>Public/shareable pricing benchmark data ("average rent in this pincode") for brand trust and organic reach</li>
+<li>Post-negotiation feedback survey feeding the learning loop</li>
+</ul>
+</div>
+
+<h2 id="part12">12. Suggested Build Roadmap</h2>
+<table>
+<tr><th>Phase</th><th>Focus</th></tr>
+<tr><td><strong>Phase 1</strong></td><td>Single-language negotiator, one city, manual pricing benchmarks, basic ElevenLabs agent with one voice, simple 3-round negotiation state machine</td></tr>
+<tr><td><strong>Phase 2</strong></td><td>Add location-based language prediction + real-time switch, split into Conversational + Strategy Planner agents, start logging transcripts for phrase-library refinement</td></tr>
+<tr><td><strong>Phase 3</strong></td><td>Full multi-agent split (add Fraud Monitor, Pricing Analyst as separate async agents), cross-user benchmark database live, vendor history profiles</td></tr>
+<tr><td><strong>Phase 4</strong></td><td>Multi-language code-switch mirroring, sentiment/prosody-adaptive pacing, region-specific negotiation-norm tuning, live listen-in feature</td></tr>
+<tr><td><strong>Phase 5</strong></td><td>Multi-round re-negotiation with finalists, public benchmark dashboard, white-label/API version for relocation and corporate housing partners</td></tr>
+</table>
+
+<div class="note">The single highest-leverage early investment is probably the pricing benchmark database (section 7) — everything else (anchoring, fraud detection, even trust) gets meaningfully better once the agent has real local price data to reason from, and it compounds the longer Scout operates in a given market.</div>
+
+</body>
+</html>
