@@ -4,7 +4,7 @@
  */
 
 /**
- * FROZEN CONTRACT. Every call MUST terminate as exactly one of these terminal states. Referenced by quote.json. TEAM DECISION PENDING: packages/contracts/README.md lists a 4th status 'error'; this Phase 0 draft ships the 3 product endings (itemized_quote | callback_scheduled | declined). Resolve before final freeze. Do not add a status without telling the whole team.
+ * FROZEN CONTRACT. Every completed negotiation terminates as exactly one customer-visible state: itemized_quote, callback_scheduled, or declined. Provider failures are operational events, not a fourth business outcome; they must be logged separately and may lead to a reviewed callback. Referenced by quote.json.
  */
 export type CallOutcome = {
   [k: string]: unknown;

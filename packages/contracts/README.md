@@ -4,7 +4,7 @@ This package will contain the versioned, provider-neutral shared schemas. Establ
 
 - `RequirementSpec`: confirmed housing requirements and deal-breakers.
 - `CandidateListing`: discovered listing plus source and contact details.
-- `CallOutcome`: `quote`, `callback`, `decline`, or `error`, with evidence references.
+- `CallOutcome`: `itemized_quote`, `callback_scheduled`, or `declined`, with evidence references. Provider errors are operational events and do not become a customer-facing outcome.
 - `Quote`: normalised base rent/price, deposit, maintenance, brokerage, amenities, and terms.
 - `RiskFlag`: severity, rule, and evidence.
 - `Recommendation`: ranked options with plain-language reasoning and evidence links.
