@@ -1,129 +1,69 @@
-# Agent Tools — ElevenLabs ↔ Orchestrator contract
+# Scout agent tools — ElevenLabs ↔ orchestrator
 
-How Person A's ElevenLabs agents talk to Person B's backend (`@scout/orchestrator`).
-Everything here maps to endpoints that already exist and are self-tested
-(`node apps/orchestrator/src/server/api.smoke.js`).
+Scout's moving negotiator does not decide a deal by itself. The deterministic
+Negotiation Engine chooses the next tactic; the voice agent asks questions,
+records what it hears, and verbalizes only that reviewed action.
 
-Grounded in the ElevenLabs Agents docs:
-- Server / webhook tools: <https://elevenlabs.io/docs/eleven-agents/customization/tools/server-tools>
-- Webhook tool config: <https://elevenlabs.io/docs/eleven-agents/customization/tools/webhook-tools>
-- Twilio call personalization: <https://elevenlabs.io/docs/eleven-agents/phone-numbers/twilio-integration/customising-calls>
+## Required deployment boundary
 
-## The shape of the integration
+ElevenLabs can call webhook tools only over a publicly reachable HTTPS URL.
+`localhost:8787` is useful for the smoke tests but **cannot** be used for live
+agent tools. Before enabling outbound calls, deploy the orchestrator and set:
 
-ElevenLabs **webhook (server) tools** let the agent make HTTP calls mid-conversation;
-the tool's JSON response is added back into the conversation context. We expose
-three tools plus one call-start personalization webhook.
-
-```
-call start ─▶ [personalization webhook] ─▶ returns dynamic_variables { call_id, spec... }
-   │
-   ├─ during call ─▶ log_quote   (POST /calls/{{call_id}}/quote)     write fields as heard
-   ├─ during call ─▶ get_leverage (GET  /calls/{{call_id}}/leverage) real numbers to cite
-   └─ at hang-up  ─▶ record_outcome (POST /calls/{{call_id}}/outcome) structured ending
+```bash
+SCOUT_PUBLIC_ORCHESTRATOR_URL=https://api.example.com
+SCOUT_AGENT_TOOL_SECRET=<a long, unique secret>
 ```
 
-Base URL in dev: `http://<host>:8787` (run `npm --filter @scout/orchestrator run serve`).
+The same secret is sent by the configured `x-scout-agent-secret` request
+header. The backend requires it whenever it is set. Keep both values in secret
+stores, never in git or browser-visible environment variables.
 
-## Call start — personalization webhook (injects `call_id` + the job spec)
+Run the provisioner after those values are available:
 
-When a call connects, ElevenLabs POSTs to your configured personalization webhook.
-Return `conversation_initiation_client_data` so the agent gets `dynamic_variables`
-(the confirmed `RequirementSpec`, reused verbatim across every call) and the
-`call_id` used in tool paths:
-
-```json
-{
-  "type": "conversation_initiation_client_data",
-  "dynamic_variables": {
-    "call_id": "call_42",
-    "deal_type": "pg",
-    "area": "Koramangala",
-    "budget_ceiling": 16000,
-    "lease_duration_months": 12
-  }
-}
+```bash
+uv run --project tools/elevenlabs-mcp python apps/voice-agents/scripts/provision-elevenlabs-agents.py
 ```
 
-> Person B provides this endpoint (create the call-session first, then return its
-> `call_id`). Person A points the agent's personalization webhook at it.
+Without both values, the script deliberately leaves only the end-call tool on
+the agent. It never places a telephone call.
 
-## Tool 1 — `log_quote` (write structured fields DURING the call)
+## Mid-call tool contract
 
-The agent calls this every time the seller states a number — not after the call.
-Partial writes are merged; unknown fields are ignored.
+Every outbound dispatch creates the `call_id` and injects it as an ElevenLabs
+dynamic variable. The Moving Negotiator then uses these paths:
 
-- **Method / URL:** `POST {{base}}/calls/{{call_id}}/quote`
-- **Body params** (all optional; send what you just heard):
-  `base_rent`, `deposit`, `maintenance_monthly`, `brokerage_onetime`,
-  `hidden_charges`, `lease_duration_months`, `amenities_included`,
-  `first_quoted_effective`, `final_quoted_effective`, `price_moved`,
-  `commute_minutes`, `seller_language`, `transcript_append`
-- **Returns:** the updated session (state `in_progress`).
+| Tool | Method and path | When to use it |
+| --- | --- | --- |
+| `log_moving_quote` | `POST /calls/:call_id/quote` | Immediately after each factual fee, total, deposit, or binding-status statement. |
+| `get_verified_leverage` | `GET /calls/:call_id/leverage` | Before a price counter; cite only returned comparisons. |
+| `get_next_negotiation_action` | `POST /calls/:call_id/strategy` | Before changing tactics. The response is the authority for the next sentence. |
+| `record_call_outcome` | `POST /calls/:call_id/outcome` | End every conversation as `itemized_quote`, `callback_scheduled`, or `declined`. |
 
-ElevenLabs webhook tool config (per the webhook-tools docs):
+`log_moving_quote` accepts partial values; the safe fields are `base_price`,
+`packing`, `unpacking`, `stairs`, `long_carry`, `fuel`, `insurance`, `storage`,
+`other_fees`, `deposit`, `first_quoted_total`, `binding_total`, `quote_status`,
+`risk_signals`, `counter_rounds`, and `transcript_append`. Other keys are
+discarded by the backend.
 
-```json
-{
-  "type": "webhook",
-  "name": "log_quote",
-  "description": "Record a fee the seller just stated. Call it the moment you hear rent, deposit, maintenance, or brokerage — never wait until the call ends.",
-  "api_schema": {
-    "url": "https://{{system__env_api_host}}/calls/{{call_id}}/quote",
-    "method": "POST",
-    "request_body_schema": {
-      "type": "object",
-      "properties": {
-        "base_rent": { "type": "number" },
-        "deposit": { "type": "number" },
-        "maintenance_monthly": { "type": "number" },
-        "brokerage_onetime": { "type": "number" }
-      }
-    }
-  }
-}
-```
+## Safety invariants
 
-## Tool 2 — `get_leverage` (real numbers the Negotiator may cite)
+- The agent discloses that it is Scout's AI assistant and never makes payments,
+  reservations, or binding commitments.
+- A leverage response is built only from completed, non-high-risk moving quotes.
+  A model cannot fabricate a competitor offer through this endpoint.
+- A `binding_total` is a confirmed all-in total, not an estimate. The agent
+  must ask for itemization when fees are unclear.
+- Trial and simulated conversations use the same strategy and quote contracts;
+  no phone call is needed to test negotiation behavior.
 
-Before countering on price, the agent asks the backend what leverage is real.
+## Verification sequence
 
-- **Method / URL:** `GET {{base}}/calls/{{call_id}}/leverage`
-- **Returns:**
-
-```json
-{
-  "leverage": [
-    { "type": "comparable_unit", "value": 15500, "evidence": { "listing_id": "pg_a", "listing_name": "Zolo Nest" } },
-    { "type": "benchmark", "value": 14000, "source": "tavily" },
-    { "type": "fee_attack", "target_fee": "deposit", "monthly_impact": 1833.33 }
-  ]
-}
-```
-
-> **Honesty line, enforced in code:** this endpoint only ever returns numbers
-> from *confirmed itemized, non-fraud* quotes plus the real Tavily benchmark. The
-> agent physically cannot be handed an invented competing bid. Prompt the agent
-> to cite only what this tool returns ("I have a comparable at ₹15,500").
-
-## Tool 3 — `record_outcome` (every call ends structured)
-
-- **Method / URL:** `POST {{base}}/calls/{{call_id}}/outcome`
-- **Body:** `{ "status": "itemized_quote" | "callback_scheduled" | "declined", "reason": "...", "callback_at": "<ISO8601>" }`
-  - `reason` required for `callback_scheduled` and `declined`.
-- **Returns:** the finalized session + the normalized, risk-assessed quote.
-
-## Reporting (Person C)
-
-- `GET {{base}}/report` → `{ ranked, recommendation, benchmark }` — all quotes
-  ranked (high_risk never #1), each with `effective_monthly_cost`, `risk_flag`,
-  `fraud_signals`, `call_outcome`, and price-drop fields.
-
-## The four Conversation Requirement points (where each lives)
-
-| Requirement | Where |
-| --- | --- |
-| AI disclosure / "are you a robot?" | agent system prompt (Person A) |
-| Survive friction (barge-in, evasive) | agent turn-taking config (Person A) |
-| Honesty line (no invented bids) | `get_leverage` returns only real data (Person B, enforced) |
-| Every call ends structured | `record_outcome` → 3 outcomes (Person B) |
+1. Run `node apps/orchestrator/src/moving/moving-workflow.smoke.js`.
+2. Run ElevenLabs conversation simulations against the Moving Negotiator with
+   transparent, fee-padder, hard-seller, and deposit-pressure scenarios.
+3. Deploy a staging orchestrator, set the two secure values above, and run the
+   provisioner.
+4. Make a consented call to a verified test number with outbound calling
+   explicitly enabled. Confirm quote writes, strategy lookup, outcome, and
+   report ranking before dialing a business.

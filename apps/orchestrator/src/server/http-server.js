@@ -62,6 +62,13 @@ async function route(req, res, context) {
     return send(res, 200, { ok: true });
   }
 
+  // ElevenLabs webhook tools carry this secret once Scout is deployed. Keeping
+  // it optional lets the local smoke tests and localhost development work,
+  // while a public endpoint is never left writable by an arbitrary caller.
+  if (isAgentToolPath(method, pathname) && !hasAgentToolAccess(req)) {
+    return send(res, 401, { error: 'unauthorized agent tool request' });
+  }
+
   if (method === 'POST' && pathname === '/calls') {
     const body = await readBody(req);
     return send(res, 201, service.startCall(body));
@@ -215,7 +222,17 @@ function send(res, status, payload) {
     // development usable when the browser talks to the orchestrator directly.
     'access-control-allow-origin': process.env.WEB_ORIGIN || '*',
     'access-control-allow-methods': 'GET, POST, OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-headers': 'content-type, x-scout-agent-secret',
   });
   res.end(payload == null ? '' : JSON.stringify(payload));
+}
+
+function isAgentToolPath(method, pathname) {
+  return (method === 'POST' && /^\/calls\/[^/]+\/(quote|strategy|outcome)$/.test(pathname))
+    || (method === 'GET' && /^\/calls\/[^/]+\/leverage$/.test(pathname));
+}
+
+function hasAgentToolAccess(req) {
+  const secret = process.env.SCOUT_AGENT_TOOL_SECRET;
+  return !secret || req.headers['x-scout-agent-secret'] === secret;
 }

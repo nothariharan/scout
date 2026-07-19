@@ -20,9 +20,11 @@ await new Promise((resolve) => server.listen(0, resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
 
 async function api(method, path, body) {
+  const headers = { 'content-type': 'application/json' };
+  if (process.env.SCOUT_AGENT_TOOL_SECRET) headers['x-scout-agent-secret'] = process.env.SCOUT_AGENT_TOOL_SECRET;
   const res = await fetch(base + path, {
     method,
-    headers: body ? { 'content-type': 'application/json' } : undefined,
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
   return res.json();

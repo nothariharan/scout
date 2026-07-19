@@ -13,6 +13,77 @@ load_dotenv()
 client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
 
 VOICE_ID = "cgSgspJ2msm6clMCkdW9"
+PUBLIC_ORCHESTRATOR_URL = os.getenv("SCOUT_PUBLIC_ORCHESTRATOR_URL", "").rstrip("/")
+AGENT_TOOL_SECRET = os.getenv("SCOUT_AGENT_TOOL_SECRET", "")
+
+
+def negotiator_tools():
+    """Return the live moving tools only when a deployable HTTPS backend exists.
+
+    Localhost cannot be reached by ElevenLabs. This keeps an accidental agent
+    update from advertising unusable or unauthenticated tool endpoints.
+    """
+    if not PUBLIC_ORCHESTRATOR_URL or not AGENT_TOOL_SECRET:
+        return [{"type": "system", "name": "end_call", "description": ""}]
+
+    headers = {"x-scout-agent-secret": AGENT_TOOL_SECRET}
+    path_params = {"call_id": {"type": "string", "dynamic_variable": "call_id"}}
+    return [
+        {"type": "system", "name": "end_call", "description": ""},
+        {
+            "type": "webhook", "name": "log_moving_quote",
+            "description": "Record each moving fee as soon as the company states it. Use only numbers the company actually said.",
+            "response_timeout_secs": 10, "api_schema": {
+                "url": f"{PUBLIC_ORCHESTRATOR_URL}/calls/{{call_id}}/quote", "method": "POST",
+                "request_headers": headers, "path_params_schema": path_params,
+                "request_body_schema": {"type": "object", "properties": {
+                    "base_price": {"type": "number", "description": "Base moving price just quoted."},
+                    "packing": {"type": "number", "description": "Packing fee, if stated."},
+                    "stairs": {"type": "number", "description": "Stairs or elevator fee, if stated."},
+                    "long_carry": {"type": "number", "description": "Long-carry fee, if stated."},
+                    "fuel": {"type": "number", "description": "Fuel or travel fee, if stated."},
+                    "insurance": {"type": "number", "description": "Insurance fee, if stated."},
+                    "deposit": {"type": "number", "description": "Deposit requested, if stated."},
+                    "first_quoted_total": {"type": "number", "description": "First all-in total quote."},
+                    "binding_total": {"type": "number", "description": "Final all-in binding total, only if confirmed."},
+                    "quote_status": {"type": "string", "description": "Whether the quote is binding or non-binding."},
+                    "transcript_append": {"type": "string", "description": "A concise factual quote note."}
+                }},
+            },
+        },
+        {
+            "type": "webhook", "name": "get_verified_leverage",
+            "description": "Before a price counter, retrieve only Scout-verified comparable quotes. Never claim leverage that this tool did not return.",
+            "response_timeout_secs": 10, "api_schema": {
+                "url": f"{PUBLIC_ORCHESTRATOR_URL}/calls/{{call_id}}/leverage", "method": "GET",
+                "request_headers": headers, "path_params_schema": path_params,
+            },
+        },
+        {
+            "type": "webhook", "name": "get_next_negotiation_action",
+            "description": "Ask for Scout's reviewed next action before changing negotiation tactics. Verbalize its response naturally without changing numbers or inventing facts.",
+            "response_timeout_secs": 10, "api_schema": {
+                "url": f"{PUBLIC_ORCHESTRATOR_URL}/calls/{{call_id}}/strategy", "method": "POST",
+                "request_headers": headers, "path_params_schema": path_params,
+                "request_body_schema": {"type": "object", "properties": {
+                    "counter_round": {"type": "number", "description": "Number of completed counteroffers so far."}
+                }},
+            },
+        },
+        {
+            "type": "webhook", "name": "record_call_outcome",
+            "description": "End every call with the observed structured result. Do not use itemized_quote unless an itemized quote was actually supplied.",
+            "response_timeout_secs": 10, "api_schema": {
+                "url": f"{PUBLIC_ORCHESTRATOR_URL}/calls/{{call_id}}/outcome", "method": "POST",
+                "request_headers": headers, "path_params_schema": path_params,
+                "request_body_schema": {"type": "object", "required": ["status"], "properties": {
+                    "status": {"type": "string", "enum": ["itemized_quote", "callback_scheduled", "declined"], "description": "Observed end-of-call result."},
+                    "reason": {"type": "string", "description": "Factual reason for a callback or decline."},
+                    "callback_at": {"type": "string", "description": "ISO-8601 callback time only if agreed."}
+                }},
+            },
+        },
+    ]
 
 
 def conversation_config(definition):
@@ -26,7 +97,7 @@ def conversation_config(definition):
             "prompt": {
                 "prompt": definition["system_prompt"],
                 "llm": "gemini-2.0-flash-001",
-                "tools": [{"type": "system", "name": "end_call", "description": ""}],
+                "tools": definition.get("tools", [{"type": "system", "name": "end_call", "description": ""}]),
                 "knowledge_base": [],
                 "temperature": 0.25,
             },
@@ -78,6 +149,7 @@ AGENTS = [
             "verified_leverage": "No verified leverage is available.",
             "call_id": "not_assigned",
         },
+        "tools": negotiator_tools(),
     },
 ]
 
@@ -101,5 +173,9 @@ for definition in AGENTS:
     config["agent"]["dynamic_variables"] = {
         "dynamic_variable_placeholders": definition["dynamic_placeholders"]
     }
+    config["agent"]["prompt"]["tools"] = definition.get("tools", [{"type": "system", "name": "end_call", "description": ""}])
     client.conversational_ai.agents.update(agent_id, conversation_config=config)
     print(f"Agent ready: {definition['name']} ({agent_id})")
+
+if not PUBLIC_ORCHESTRATOR_URL or not AGENT_TOOL_SECRET:
+    print("Live agent tools skipped: set SCOUT_PUBLIC_ORCHESTRATOR_URL and SCOUT_AGENT_TOOL_SECRET after deploying the orchestrator.")
