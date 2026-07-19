@@ -362,6 +362,72 @@
   }
 }
 
+/* Live-call demo: voice waveform bars (speaker tints the wave). */
+.wavebar {
+  display: inline-block;
+  width: 4px;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);
+  transform-origin: center;
+  animation: wave 0.8s ease-in-out infinite alternate;
+  transition: background 0.3s ease;
+}
+.demo-phone[data-speaker="scout"] .wavebar {
+  background: var(--rust);
+}
+@keyframes wave {
+  from {
+    transform: scaleY(0.14);
+    opacity: 0.55;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wavebar {
+    animation: none;
+    transform: scaleY(0.5);
+  }
+}
+
+/* Agent-presence blob: soft iridescent morphing orb. */
+.demo-blob {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  background:
+    radial-gradient(circle at 32% 30%, rgba(255, 214, 231, 0.95), transparent 55%),
+    radial-gradient(circle at 70% 36%, rgba(122, 120, 255, 0.9), transparent 60%),
+    radial-gradient(circle at 52% 78%, rgba(150, 232, 196, 0.9), transparent 58%),
+    #dcd9ff;
+  border-radius: 46% 54% 58% 42% / 48% 44% 56% 52%;
+  box-shadow: 0 6px 18px rgba(94, 92, 230, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+  animation: blob-morph 7s ease-in-out infinite alternate;
+}
+@keyframes blob-morph {
+  0% {
+    border-radius: 46% 54% 58% 42% / 48% 44% 56% 52%;
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    border-radius: 58% 42% 44% 56% / 42% 58% 46% 54%;
+    transform: rotate(9deg) scale(1.06);
+  }
+  100% {
+    border-radius: 42% 58% 52% 48% / 56% 46% 58% 42%;
+    transform: rotate(-7deg) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-blob {
+    animation: none;
+  }
+}
+
 /* Honesty marquee (landing). Content is duplicated once in markup. */
 .marquee-track {
   display: flex;

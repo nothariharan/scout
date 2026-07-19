@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { LiveCallDemo } from "@/components/LiveCallDemo";
 
 const STEPS = [
   { n: "01", title: "Confirm one requirement", fact: "Voice or document. Reused verbatim on every call." },
@@ -171,6 +172,11 @@ export default function Home() {
         <p className="hero-soft absolute bottom-4 left-0 text-[11px] tracking-wide text-secondary">
           Scroll ↓
         </p>
+      </section>
+
+      {/* ---- Live call demo ------------------------------------------------ */}
+      <section id="live-demo">
+        <LiveCallDemo />
       </section>
 
       {/* ---- Honesty marquee ---------------------------------------------- */}
