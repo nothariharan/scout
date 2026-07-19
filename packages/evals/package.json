@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node src/phase0.check.js && node src/phase1.check.js"
+    "test": "node src/phase0.check.js && node src/phase1.check.js && node src/moving-negotiation.check.js"
   }
 }
