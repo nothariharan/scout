@@ -24,12 +24,16 @@ def negotiator_tools():
     update from advertising unusable or unauthenticated tool endpoints.
     """
     if not PUBLIC_ORCHESTRATOR_URL or not AGENT_TOOL_SECRET:
-        return [{"type": "system", "name": "end_call", "description": ""}]
+        return [
+            {"type": "system", "name": "end_call", "description": ""},
+            {"type": "system", "name": "skip_turn", "description": ""},
+        ]
 
     headers = {"x-scout-agent-secret": AGENT_TOOL_SECRET}
     path_params = {"call_id": {"type": "string", "dynamic_variable": "call_id"}}
     return [
         {"type": "system", "name": "end_call", "description": ""},
+        {"type": "system", "name": "skip_turn", "description": ""},
         {
             "type": "webhook", "name": "log_moving_quote",
             "description": "Record each moving fee as soon as the company states it. Use only numbers the company actually said.",
@@ -97,7 +101,10 @@ def conversation_config(definition):
             "prompt": {
                 "prompt": definition["system_prompt"],
                 "llm": "gemini-2.0-flash-001",
-                "tools": definition.get("tools", [{"type": "system", "name": "end_call", "description": ""}]),
+                "tools": definition.get("tools", [
+                    {"type": "system", "name": "end_call", "description": ""},
+                    {"type": "system", "name": "skip_turn", "description": ""},
+                ]),
                 "knowledge_base": [],
                 "temperature": 0.25,
             },
@@ -169,6 +176,7 @@ def platform_settings():
 def intake_tools():
     return [
         {"type": "system", "name": "end_call", "description": ""},
+        {"type": "system", "name": "skip_turn", "description": ""},
         {"type": "client", "name": "submit_moving_brief", "description": "Call this exactly once only after you have summarized the complete moving brief and the user clearly confirms it. Supply the confirmed facts exactly; never invent missing values.", "expects_response": True, "parameters": {"type": "object", "required": ["origin_area", "origin_city", "destination_area", "destination_city", "move_date", "home_size", "budget_ideal", "budget_ceiling", "currency"], "properties": {
             "origin_area": {"type": "string", "description": "Confirmed origin locality."}, "origin_city": {"type": "string", "description": "Confirmed origin city."}, "destination_area": {"type": "string", "description": "Confirmed destination locality."}, "destination_city": {"type": "string", "description": "Confirmed destination city."}, "move_date": {"type": "string", "description": "Confirmed move date, ISO YYYY-MM-DD."}, "home_size": {"type": "string", "description": "Confirmed home-size category.", "enum": ["studio", "1_bed", "2_bed", "3_bed_plus", "custom"]}, "inventory_notes": {"type": "string", "description": "Confirmed inventory or special-item notes."}, "packing": {"type": "boolean", "description": "Whether packing is requested."}, "insurance": {"type": "boolean", "description": "Whether insurance is requested."}, "origin_floors": {"type": "number", "description": "Origin floor count."}, "destination_floors": {"type": "number", "description": "Destination floor count."}, "elevator_origin": {"type": "boolean", "description": "Whether origin has an elevator."}, "elevator_destination": {"type": "boolean", "description": "Whether destination has an elevator."}, "budget_ideal": {"type": "number", "description": "Confirmed ideal all-in budget."}, "budget_ceiling": {"type": "number", "description": "Confirmed hard all-in ceiling."}, "currency": {"type": "string", "description": "Budget currency code."}, "negotiation_posture": {"type": "string", "description": "Confirmed negotiation posture.", "enum": ["fast", "balanced", "aggressive"]}, "language_pref": {"type": "string", "description": "Preferred conversation language."}
         }}},
@@ -186,7 +194,7 @@ AGENTS = [
     {
         "name": "Scout Negotiator - Moving",
         "first_message": "Hello, this is Scout's AI assistant calling on behalf of a customer who is comparing moving options. Is this a good time to confirm an itemized quote?",
-        "system_prompt": """You are Scout's outbound buying agent for moving companies. State transparently that you are Scout's AI assistant calling on behalf of a customer. If asked whether you are AI, answer plainly and continue politely. The confirmed MOVE SCOPE is {{moving_scope}}. Use this exact scope for every question; never guess or alter its origin, destination, date, inventory, services, stairs, or budget. Your reviewed STRATEGY BRIEF is {{strategy_brief}}. Your VERIFIED LEVERAGE is {{verified_leverage}}. The Scout call ID is {{call_id}}. Follow the strategy brief as the sole authority for the next tactic: you may phrase it naturally, but never change the target, invent a strategy, or cite a competing offer unless it is verified. When a runtime field is blank or unavailable, collect an itemized quote without pressure rather than guessing. Collect and confirm base price, packing, stairs, long-carry, fuel, insurance, deposit, binding/non-binding status, and exclusions. Clarify uncertain numbers rather than estimating. Never invent a bid, deadline, inventory, identity, or urgency. Never accept, reserve, sign, pay, or bind the customer; every term remains subject to customer confirmation. If the vendor declines to negotiate, make at most one respectful final clarification. If there is unsafe pre-payment, pressure, or refusal to itemize, flag it and stop pressuring. End with an itemized quote, dated callback commitment, or documented decline.
+        "system_prompt": """You are Scout's outbound buying agent for moving companies. State transparently that you are Scout's AI assistant calling on behalf of a customer. If asked whether you are AI, answer plainly and continue politely. The confirmed MOVE SCOPE is {{moving_scope}}. Use this exact scope for every question; never guess or alter its origin, destination, date, inventory, services, stairs, or budget. Your reviewed STRATEGY BRIEF is {{strategy_brief}}. Your VERIFIED LEVERAGE is {{verified_leverage}}. The Scout call ID is {{call_id}}. Follow the strategy brief as the sole authority for the next tactic: you may phrase it naturally, but never change the target, invent a strategy, or cite a competing offer unless it is verified. When a runtime field is blank or unavailable, collect an itemized quote without pressure rather than guessing. Collect and confirm base price, packing, stairs, long-carry, fuel, insurance, deposit, binding/non-binding status, and exclusions. Clarify uncertain numbers rather than estimating. Never invent a bid, deadline, inventory, identity, or urgency. Never accept, reserve, sign, pay, or bind the customer; every term remains subject to customer confirmation. You may ask for, repeat back, and record a vendor's offered callback date and time; that records availability only and is not a booking or commitment by the customer. If the vendor declines to negotiate, make at most one respectful final clarification. If there is unsafe pre-payment, pressure, or refusal to itemize, flag it and stop pressuring. End with an itemized quote, dated callback commitment, or documented decline.
 
 VOICE DELIVERY AND CONFLICT POLICY
 - Start warm, concise, and conversational. Listen fully; do not talk over a dispatcher.
@@ -194,8 +202,8 @@ VOICE DELIVERY AND CONFLICT POLICY
 - If the vendor is busy, dismissive, evasive, or applies hard-sell pressure, become firmer rather than louder: slow slightly, lower the emotional intensity, name the exact fact or question, then pause for an answer. A controlled, measured delivery is stronger than an argument.
 - When confirming a price, fee, exclusion, deposit, or whether a quote is binding, use deliberate emphasis. Ask one closed question at a time.
 - If the vendor becomes cooperative or makes a real concession, return immediately to a warmer, appreciative tone.
-- Never yell, threaten, shame, mirror hostility, use sarcasm, or manufacture urgency. Do not use emotional audio tags casually; use only [slow] for a short factual clarification when it helps comprehension.
-- If interrupted, stop immediately, acknowledge the interruption in one short phrase, answer it, and return to the unanswered item. If the vendor refuses twice to itemise or negotiate, document the decline and end politely.""",
+- Never yell, threaten, shame, mirror hostility, use sarcasm, or manufacture urgency. Use [firm], [measured], or [warm] only at the start of a single sentence when the delivery benefit is clear; never stack tags or use them to imitate anger.
+- If interrupted, stop immediately, acknowledge the interruption in one short phrase, answer it, and return to the unanswered item. When the vendor asks for a moment or says they will check something, call skip_turn rather than filling the silence. If the vendor refuses twice to itemise or negotiate, document the decline and end politely.""",
         "dynamic_placeholders": {
             "strategy_brief": "No reviewed strategy supplied. Collect an itemized quote without pressure.",
             "verified_leverage": "No verified leverage is available.",
@@ -238,7 +246,10 @@ for definition in AGENTS:
     # API response. We manage the complete inline tool list here, so sending
     # both forms back is rejected by ElevenLabs.
     config["agent"]["prompt"].pop("tool_ids", None)
-    config["agent"]["prompt"]["tools"] = definition.get("tools", [{"type": "system", "name": "end_call", "description": ""}])
+    config["agent"]["prompt"]["tools"] = definition.get("tools", [
+        {"type": "system", "name": "end_call", "description": ""},
+        {"type": "system", "name": "skip_turn", "description": ""},
+    ])
     config["asr"] = desired["asr"]
     config["tts"] = desired["tts"]
     config["turn"] = desired["turn"]
