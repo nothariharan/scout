@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const legacyRealEstate = require('./vertical.config.json');
 const moving = require('./profiles/moving.config.json');
+const homeRenovation = require('./profiles/home-renovation.config.json');
 const config = legacyRealEstate;
 
 const profiles = Object.freeze({
@@ -13,6 +14,7 @@ const profiles = Object.freeze({
   // Retain the original profile id for old fixtures and saved local data.
   real_estate_pg: legacyRealEstate,
   [moving.vertical_name]: moving,
+  [homeRenovation.vertical_name]: homeRenovation,
 });
 
 export default config;

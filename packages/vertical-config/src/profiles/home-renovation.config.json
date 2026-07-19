@@ -1,0 +1,15 @@
+{
+  "vertical_name": "home_renovation",
+  "display_name": "Home renovation contractors",
+  "currency": "INR",
+  "intake_schema": ["location", "project_type", "scope", "finish_level", "timeline", "budget", "site_visit"],
+  "price_model": { "primary_metric": "binding_total", "required_quote_items": ["labor", "materials", "transport", "demolition_prep", "permits_taxes"], "red_flag_threshold_percent": 35 },
+  "negotiation_policy": { "max_counter_rounds": { "aggressive": 3, "balanced": 2, "fast": 1 }, "target_discount_percent": { "aggressive": 12, "balanced": 7, "fast": 3 }, "allow_tradeables": ["warranty_months", "materials", "timeline_days"], "truthful_leverage_only": true, "never_commit_funds": true },
+  "fraud_rules": [
+    { "id": "large_upfront_payment", "trigger_keywords": ["full payment upfront", "pay everything before work", "100 percent advance"], "action": "flag_high_risk" },
+    { "id": "cash_no_invoice", "trigger_keywords": ["cash only", "no invoice", "without bill"], "action": "flag_high_risk" },
+    { "id": "no_warranty", "trigger_keywords": ["no warranty", "no guarantee"], "action": "flag_caution" },
+    { "id": "vague_scope", "trigger_keywords": ["final after work", "we will see later", "not included"], "action": "flag_caution" }
+  ],
+  "seller_personas": ["transparent_contractor", "fee_padder", "busy_high_quote", "unsafe_upfront_payment"]
+}
