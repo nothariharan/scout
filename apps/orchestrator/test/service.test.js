@@ -89,3 +89,54 @@ test('price-drop evidence line is captured on close', () => {
   assert.equal(closed.quote.price_moved, true);
   assert.equal(closed.quote.evidence_line, 'Owner: I will drop the maintenance if you commit today');
 });
+
+test('setRequirement / getRequirement (intake)', () => {
+  const svc = createNegotiationService({});
+  assert.equal(svc.getRequirement(), null);
+  const r = svc.setRequirement({ deal_type: 'pg', budget: { ceiling: 16000 }, location: { pincode: '560034' } });
+  assert.match(r.id, /^req_/);
+  assert.equal(svc.getRequirement().spec.deal_type, 'pg');
+});
+
+test('listCalls / getCall', () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const c = svc.startCall({ listing_id: 'a', listing_name: 'A' });
+  assert.equal(svc.listCalls().length, 1);
+  assert.equal(svc.getCall(c.call_id).listing_id, 'a');
+  assert.equal(svc.getCall('nope'), null);
+});
+
+test('service emits lifecycle events', () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const seen = [];
+  svc.events.on('event', (e) => seen.push(e.type));
+  const c = svc.startCall({ listing_id: 'a' });
+  svc.writeQuoteFields(c.call_id, { base_rent: 10000, lease_duration_months: 12 });
+  svc.closeCall(c.call_id, { status: 'itemized_quote' });
+  assert.ok(seen.includes('call_started'));
+  assert.ok(seen.includes('quote_updated'));
+  assert.ok(seen.includes('call_closed'));
+});
+
+test('discover returns candidate shape (empty without key)', async () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const d = await svc.discover();
+  assert.ok(Array.isArray(d.candidates));
+});
+
+test('report exposes evidence_refs with transcript/recording links', async () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const c = svc.startCall({ listing_id: 'a', listing_name: 'A' });
+  svc.writeQuoteFields(c.call_id, {
+    base_rent: 11000, lease_duration_months: 12,
+    first_quoted_effective: 15000, final_quoted_effective: 13500,
+    price_drop_evidence: 'Owner caved on maintenance',
+    recording_url: 'https://rec/a.mp3', transcript_url: 'https://t/a.txt',
+  });
+  svc.closeCall(c.call_id, { status: 'itemized_quote' });
+  const rep = await svc.report();
+  assert.ok(Array.isArray(rep.recommendation.evidence_refs));
+  const ref = rep.recommendation.evidence_refs.find((x) => x.listing_id === 'a');
+  assert.equal(ref.recording_url, 'https://rec/a.mp3');
+  assert.equal(ref.line, 'Owner caved on maintenance');
+});

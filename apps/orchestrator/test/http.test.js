@@ -83,3 +83,42 @@ test('webhook signature enforced when secret is set', async () => {
     delete process.env.ELEVENLABS_WEBHOOK_SECRET;
   }
 });
+
+test('intake + discovery + calls list + CORS over HTTP', async () => {
+  await withServer(async (base) => {
+    const call = client(base);
+    const spec = { deal_type: 'pg', budget: { ceiling: 16000, currency: 'INR' }, location: { pincode: '560034', area: 'Koramangala', city: 'Bengaluru' } };
+    const r = await call('POST', '/requirement', { spec });
+    assert.equal(r.status, 201);
+    assert.match(r.json.id, /^req_/);
+
+    const g = await call('GET', '/requirement');
+    assert.equal(g.json.spec.deal_type, 'pg');
+
+    const cand = await call('GET', '/candidates');
+    assert.equal(cand.status, 200);
+    assert.ok(Array.isArray(cand.json.candidates));
+
+    const c1 = await call('POST', '/calls', { listing_id: 'a', listing_name: 'A' });
+    const list = await call('GET', '/calls');
+    assert.ok(list.json.some((x) => x.call_id === c1.json.call_id));
+
+    const one = await call('GET', `/calls/${c1.json.call_id}`);
+    assert.equal(one.json.listing_id, 'a');
+    assert.equal((await call('GET', '/calls/nope')).status, 404);
+
+    const res = await fetch(base + '/report');
+    assert.equal(res.headers.get('access-control-allow-origin'), '*');
+  });
+});
+
+test('GET /events streams a snapshot', async () => {
+  await withServer(async (base) => {
+    const res = await fetch(base + '/events', { headers: { accept: 'text/event-stream' } });
+    const reader = res.body.getReader();
+    const { value } = await reader.read();
+    const text = new TextDecoder().decode(value);
+    assert.match(text, /"type":"snapshot"/);
+    await reader.cancel();
+  });
+});

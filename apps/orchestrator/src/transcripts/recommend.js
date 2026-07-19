@@ -74,10 +74,26 @@ function templateRecommendation(rankedQuotes, requirement) {
     options: rankedQuotes.map((q) => ({
       rank: q.rank,
       listing_id: q.listing_id,
+      listing_name: q.listing_name,
       effective_monthly_cost: q.effective_monthly_cost,
       risk_flag: q.risk_flag,
       reasoning: q.reasoning,
+      evidence: {
+        transcript_url: q.transcript_url || null,
+        recording_url: q.recording_url || null,
+        price_drop_evidence: q.evidence_line || null,
+        fraud_signals: q.fraud_signals ?? [],
+      },
     })),
+    // Evidence links for the report's "why" — only listings that carry evidence.
+    evidence_refs: rankedQuotes
+      .filter((q) => q.transcript_url || q.recording_url || q.evidence_line)
+      .map((q) => ({
+        listing_id: q.listing_id,
+        transcript_url: q.transcript_url || null,
+        recording_url: q.recording_url || null,
+        line: q.evidence_line || null,
+      })),
   };
 }
 

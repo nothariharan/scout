@@ -92,9 +92,27 @@ mid-call tool writes and the post-call webhook land in the right session.
 Both verify the `ElevenLabs-Signature` HMAC when `ELEVENLABS_WEBHOOK_SECRET` is
 set (skipped in dev). See `docs/AGENT-TOOLS.md`.
 
+### HTTP endpoint surface
+
+| Method / path | Purpose |
+| --- | --- |
+| `POST /requirement`, `GET /requirement` | intake: confirm + read the RequirementSpec (reused across calls) |
+| `GET /candidates` | discovery: Places call-list + commute geofence |
+| `POST /calls` | start a call session |
+| `POST /calls/:id/quote` | mid-call: write structured fields |
+| `GET /calls/:id/leverage` | mid-call: real leverage (never invented) |
+| `POST /calls/:id/outcome` | close as itemized_quote / callback_scheduled / declined |
+| `GET /calls`, `GET /calls/:id` | list / read call sessions |
+| `GET /events` | live SSE stream (snapshot + call lifecycle events) |
+| `POST /agent/personalization`, `POST /agent/post-call` | ElevenLabs webhooks (HMAC-verified) |
+| `GET /report` | ranked comparison + recommendation (with `evidence_refs`) |
+
+All JSON responses send `access-control-allow-origin: *` (+ OPTIONS preflight) so
+the web app can call the backend directly or via a proxy.
+
 ### Tests
 
 ```bash
-node --test apps/orchestrator/test/    # unit + service + HTTP integration
+node --test apps/orchestrator/test/*.test.js    # 37 tests: unit + service + HTTP + connectors
 ```
 
