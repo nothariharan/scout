@@ -1,40 +1,115 @@
 # Scout
 
-Scout is an autonomous buying agent for the ElevenLabs **The Negotiator** challenge. Its first working vertical is moving companies: it turns one confirmed moving brief into an evidence-backed call list, reviewed negotiation actions, itemized quotes, and a ranked recommendation.
+**autonomous voice buyer that calls, compares, and haggles — with receipts.**
 
-The current implementation is a functional moving-pilot foundation, with provider boundaries kept configurable for future home-service verticals.
+built for ElevenLabs Hack-Nation · **The Negotiator**  
+live product · real outbound calls · verified leverage only · never invents competitor prices
 
-## Product focus
+---
 
-The first vertical is moving. Scout discovers nearby businesses through OpenStreetMap, carries the same confirmed scope into each conversation, discloses its AI role, collects itemized costs, flags pressure and non-binding-quote risks, negotiates only with verified leverage, and returns a ranked shortlist. The same contracts can be configured for another service vertical without rebuilding the core engine.
+## demo (start here)
 
-## Repository map
+| | |
+| --- | --- |
+| **live app** | [scout-dusky-six.vercel.app](https://scout-dusky-six.vercel.app) |
+| **demo video** | [watch `scout-demo.mp4`](media/demo/scout-demo.mp4) — full product walkthrough |
+| **negotiation call 1** | [listen · conv `5201kxx…`](media/demo/negotiation-call-1-conv_5201kxx76rwvebfb1s430ve2nm5h.mp3) |
+| **negotiation call 2** | [listen · conv `9401kxx…`](media/demo/negotiation-call-2-conv_9401kxx51dk6fxgveay6375kr57n.mp3) |
+| **all negotiation audio** | [download zip](media/demo/negotiation-audio.zip) |
+| **source archive** | [Scout-HackNation zip](media/demo/scout-hacknation-source.zip) — open `START-HERE.md` inside first |
+
+> tip: on GitHub, click an `.mp3` / `.mp4` to play inline. zip files download.
+
+### demo video
+
+the main walkthrough of Scout end-to-end (intake → calls → ranked recommendation):
+
+[`media/demo/scout-demo.mp4`](media/demo/scout-demo.mp4)
+
+### live bargaining audio
+
+two real ElevenLabs negotiation conversations from the hackathon build:
+
+1. [`negotiation-call-1-conv_5201kxx76rwvebfb1s430ve2nm5h.mp3`](media/demo/negotiation-call-1-conv_5201kxx76rwvebfb1s430ve2nm5h.mp3)  
+   conversation id: `conv_5201kxx76rwvebfb1s430ve2nm5h`
+2. [`negotiation-call-2-conv_9401kxx51dk6fxgveay6375kr57n.mp3`](media/demo/negotiation-call-2-conv_9401kxx51dk6fxgveay6375kr57n.mp3)  
+   conversation id: `conv_9401kxx51dk6fxgveay6375kr57n`
+
+bundle: [`negotiation-audio.zip`](media/demo/negotiation-audio.zip)
+
+---
+
+## what it is
+
+people shopping for high-friction local services (movers, hostels, contractors) waste hours calling vendors one-by-one. quotes are inconsistent. leverage dies between calls.
+
+Scout turns **one confirmed brief** into:
+
+1. discovery (OpenStreetMap)
+2. parallel voice calls (ElevenLabs → Twilio)
+3. itemized, comparable quotes
+4. haggling that may only cite **verified** competing bids
+5. a ranked recommendation with transcript evidence
+
+hard rule: Scout never pays, signs, or binds the customer. AI discloses when asked.
+
+first vertical: **moving**. live multilingual path: **India hostel / PG** (Hindi-first + Indian English).
+
+---
+
+## stack that gives us an edge
+
+ElevenLabs · Twilio · Next.js · Node orchestrator · OpenStreetMap · Tavily · Gemini / Claude (via ElevenLabs) · OpenAI helpers · pnpm monorepo · simulated market · verified-leverage strategy engine
+
+honesty is enforced in code — the voice LLM speaks; the orchestrator decides tactics and which numbers are allowed.
+
+---
+
+## repository map
 
 ```text
 apps/
-  web/                User intake, document upload, live activity, and comparison UI
-  orchestrator/       Call lifecycle, structured outcomes, ranking, and audit events
-  voice-agents/       ElevenLabs agent prompts, tools, and conversation policies
-  simulated-market/   Counterparty agents and repeatable negotiation scenarios
+  web/                intake, live activity, comparison UI (Vercel)
+  orchestrator/       call lifecycle, strategy, ranking, audit
+  voice-agents/       ElevenLabs intake + negotiator prompts/tools
+  simulated-market/   deterministic seller styles (no phone credits)
 packages/
-  contracts/          Versioned schemas shared by every app
-  vertical-config/    Configurable vertical taxonomy, red flags, and negotiation rules
-  evals/              Golden-call checks and acceptance fixtures
-docs/                 Product decisions, integration rules, and team plan
+  contracts/          RequirementSpec · CallOutcome · Quote · Recommendation
+  vertical-config/    fees, red flags, negotiation levers
+  evals/              golden-call fixtures
+media/demo/           demo video · bargaining audio · source zip
+docs/                 architecture, submission copy, Notebook LM prompt
+START-HERE.md         how to read this repo / the zip
 ```
 
-## Non-negotiable demo requirements
+---
 
-- One confirmed moving requirement specification reused across every call.
-- At least three distinct counterparty/negotiation styles.
-- Itemised, comparable quote outcomes for every call.
-- At least one genuine, evidence-based change in price or terms during a call.
-- A ranked recommendation linked to captured quote evidence and transcripts.
-- Honest AI disclosure, no fabricated listings or competing bids, and no authority to commit funds.
+## how to read this repo
 
-Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before adding an integration and [docs/TEAM-PLAN.md](docs/TEAM-PLAN.md) before choosing a workstream.
+1. this README (demo links above)
+2. [`START-HERE.md`](START-HERE.md) — reading order for the zip / new contributors
+3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system boundaries
+4. [`docs/negotiation-engine.md`](docs/negotiation-engine.md) — verified leverage
+5. [`docs/voice-and-multilingual.md`](docs/voice-and-multilingual.md) — Hindi / accent path
+6. [`apps/voice-agents/src/agents/negotiator.md`](apps/voice-agents/src/agents/negotiator.md) — what the agent is allowed to say
+7. [`apps/orchestrator/src/negotiation/strategy-engine.js`](apps/orchestrator/src/negotiation/strategy-engine.js) — next move brain
 
-## Run locally
+Hack-Nation form copy: [`docs/hack-nation-submission.md`](docs/hack-nation-submission.md)
+
+---
+
+## non-negotiable demo requirements
+
+- one confirmed requirement spec reused across every call
+- ≥3 distinct counterparty / negotiation styles
+- itemized, comparable quote outcomes
+- at least one genuine, evidence-based price/term change
+- ranked recommendation linked to transcript evidence
+- honest AI disclosure · no fabricated bids · no authority to commit funds
+
+---
+
+## run locally
 
 ```bash
 pnpm install
@@ -42,14 +117,33 @@ pnpm --filter @scout/orchestrator serve
 pnpm --filter @scout/web dev
 ```
 
-Open `http://localhost:3000/moving`, confirm a brief, then continue through
-Discovery, Calls, and Report. Outbound calls stay disabled by default. The
-repeatable no-credit test path is:
+open http://localhost:3000 — or jump to `/moving` / `/real-estate`
+
+outbound calls stay disabled until `OUTBOUND_CALLS_ENABLED=true` and keys are set (see `.env.example`).
+
+no-credit smoke path:
 
 ```bash
 node apps/simulated-market/src/simulator.smoke.js
 node apps/orchestrator/src/moving/moving-workflow.smoke.js
 ```
 
-For the live ElevenLabs tool boundary and deployment requirements, see
-[`docs/AGENT-TOOLS.md`](docs/AGENT-TOOLS.md).      
+live ElevenLabs tool boundary: [`docs/AGENT-TOOLS.md`](docs/AGENT-TOOLS.md)
+
+---
+
+## deploy
+
+- **frontend:** [https://scout-dusky-six.vercel.app](https://scout-dusky-six.vercel.app)  
+- **source zip for judges:** [`media/demo/scout-hacknation-source.zip`](media/demo/scout-hacknation-source.zip)
+
+---
+
+## project meta
+
+| | |
+| --- | --- |
+| challenge | The Negotiator — voice agents that call, compare, and haggle |
+| team id | `HN-1602` |
+| github | [nothariharan/scout](https://github.com/nothariharan/scout) |
+| live | [scout-dusky-six.vercel.app](https://scout-dusky-six.vercel.app) |
