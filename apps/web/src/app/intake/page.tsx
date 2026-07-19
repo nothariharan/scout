@@ -21,6 +21,8 @@ export default function IntakePage() {
   const [spec, setSpec] = useState<RequirementSpec>(DEMO_REQUIREMENT.spec);
   const [sourcePath, setSourcePath] = useState<SourcePath>("both");
   const [confirmedAt, setConfirmedAt] = useState<string | null>(null);
+  const [requirementId, setRequirementId] = useState<string | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
   const [freeText, setFreeText] = useState("");
 
   const withinBudget = spec.budget.ideal <= spec.budget.ceiling;
@@ -38,6 +40,23 @@ export default function IntakePage() {
   function simulateParse(kind: Tab) {
     setSpec(DEMO_REQUIREMENT.spec);
     setSourcePath(kind === "document" ? "document" : "voice");
+  }
+
+  async function confirm() {
+    setConfirmationError(null);
+    try {
+      const created = await fetch("/api/orchestrator/requirements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ spec, source_path: sourcePath }) });
+      if (!created.ok) throw new Error("Scout could not save this requirement.");
+      const record = await created.json();
+      const confirmed = await fetch(`/api/orchestrator/requirements/${record.id}/confirm`, { method: "POST" });
+      if (!confirmed.ok) throw new Error("Scout could not confirm this requirement.");
+      const result = await confirmed.json();
+      localStorage.setItem("scout_requirement_id", result.id);
+      setRequirementId(result.id);
+      setConfirmedAt(result.confirmed_at);
+    } catch (error) {
+      setConfirmationError(error instanceof Error ? error.message : "Could not confirm requirement.");
+    }
   }
 
   return (
@@ -199,15 +218,16 @@ export default function IntakePage() {
               {confirmedAt ? "✓ CONFIRMED · LOCKED FOR DISPATCH" : "Nothing dials until confirmed."}
             </span>
             <div className="flex gap-2">
-              <button onClick={() => setConfirmedAt(new Date().toISOString())} disabled={!ready} className="btn">
+              <button onClick={confirm} disabled={!ready} className="btn">
                 CONFIRM
               </button>
-              <a href="/discover" aria-disabled={!confirmedAt}
-                className={`btn-ghost ${confirmedAt ? "" : "pointer-events-none opacity-40"}`}>
+              <a href="/discover" aria-disabled={!confirmedAt || !requirementId}
+                className={`btn-ghost ${confirmedAt && requirementId ? "" : "pointer-events-none opacity-40"}`}>
                 DISCOVER →
               </a>
             </div>
           </div>
+          {confirmationError && <p className="mono text-[11px] text-rust">{confirmationError}</p>}
         </section>
       </div>
     </div>

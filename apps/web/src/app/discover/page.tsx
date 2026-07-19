@@ -7,13 +7,18 @@ import { inr } from "@/lib/format";
 
 export default function DiscoverPage() {
   const spec = DEMO_REQUIREMENT.spec;
+  const [candidates, setCandidates] = useState(DEMO_CANDIDATES);
+  const [loading, setLoading] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
+  const [liveMode, setLiveMode] = useState(false);
+  const [dispatching, setDispatching] = useState(false);
   const maxCommute = spec.commute_constraint?.max_minutes ?? Infinity;
 
   const inScope = useMemo(
-    () => DEMO_CANDIDATES.filter((c) => (c.commute_minutes ?? 0) <= maxCommute),
-    [maxCommute]
+    () => candidates.filter((c) => (c.commute_minutes ?? 0) <= maxCommute),
+    [candidates, maxCommute]
   );
-  const outOfScope = DEMO_CANDIDATES.filter((c) => (c.commute_minutes ?? 0) > maxCommute);
+  const outOfScope = candidates.filter((c) => (c.commute_minutes ?? 0) > maxCommute);
 
   const [selected, setSelected] = useState<Set<string>>(() => new Set(inScope.map((c) => c.listing_id)));
   const [activeId, setActiveId] = useState<string | undefined>(inScope[0]?.listing_id);
@@ -27,6 +32,37 @@ export default function DiscoverPage() {
     });
   }
 
+  async function searchOpenStreetMap() {
+    const requirementId = localStorage.getItem("scout_requirement_id");
+    if (!requirementId) { setDiscoveryError("Confirm a requirement in Intake before live discovery."); return; }
+    setLoading(true); setDiscoveryError(null);
+    try {
+      const response = await fetch(`/api/orchestrator/requirements/${requirementId}/discover`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ service_type: "moving", radius_meters: 8000, limit: 12 }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "OpenStreetMap discovery failed.");
+      const found = result.candidates ?? [];
+      setCandidates(found);
+      setSelected(new Set(found.filter((candidate: { phone?: string }) => candidate.phone).map((candidate: { listing_id: string }) => candidate.listing_id)));
+      setActiveId(found[0]?.listing_id);
+      setLiveMode(true);
+    } catch (error) { setDiscoveryError(error instanceof Error ? error.message : "OpenStreetMap discovery failed."); }
+    finally { setLoading(false); }
+  }
+
+  async function dispatch() {
+    const requirementId = localStorage.getItem("scout_requirement_id");
+    if (!requirementId) { setDiscoveryError("Confirm a requirement before dispatch."); return; }
+    setDispatching(true); setDiscoveryError(null);
+    try {
+      const response = await fetch(`/api/orchestrator/requirements/${requirementId}/dispatch`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ listing_ids: [...selected] }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Dispatch failed.");
+      localStorage.setItem("scout_dispatch", JSON.stringify(result.calls));
+      window.location.assign("/calls");
+    } catch (error) { setDiscoveryError(error instanceof Error ? error.message : "Dispatch failed."); }
+    finally { setDispatching(false); }
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -37,15 +73,19 @@ export default function DiscoverPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={searchOpenStreetMap} disabled={loading} className="btn-ghost">
+            {loading ? "SEARCHING OSM…" : "SEARCH OSM"}
+          </button>
           <span className="pill">{selected.size} SELECTED</span>
-          <a href="/calls" aria-disabled={selected.size === 0}
-            className={`btn ${selected.size ? "" : "pointer-events-none opacity-40"}`}>
+          <button onClick={dispatch} disabled={selected.size === 0 || dispatching}
+            className={`btn ${selected.size ? "" : "opacity-40"}`}>
             DISPATCH →
-          </a>
+          </button>
         </div>
       </header>
 
       <div className="wire" />
+      {discoveryError && <p className="mono text-[11px] text-rust">{discoveryError}</p>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <ol>

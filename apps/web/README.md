@@ -43,6 +43,9 @@ services (all read from an untracked `.env`, see repo `.env.example`):
   events instead of replaying seed calls.
 - `MAPS_API_KEY` — swaps the SVG map placeholder for a real tile layer (props
   stay the same).
+- `OSM_USER_AGENT` — identifies Scout when user-triggered OpenStreetMap
+  geocoding and business discovery is used. The public endpoint is rate-limited
+  and must remain replaceable by a hosted provider for production.
 
 ## Boundaries
 

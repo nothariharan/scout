@@ -83,6 +83,21 @@ export function createCallSessionStore() {
       return { ...updated };
     },
 
+    setProvider(id, provider = {}) {
+      const s = sessions.get(id);
+      if (!s) throw new Error(`call-session: unknown call ${id}`);
+      const updated = { ...s, ...provider, state: provider.state ?? s.state };
+      sessions.set(id, updated);
+      return { ...updated };
+    },
+
+    findByConversation(conversationId) {
+      for (const session of sessions.values()) {
+        if (session.provider_conversation_id === conversationId) return { ...session };
+      }
+      return null;
+    },
+
     all() {
       return [...sessions.values()].map((s) => ({ ...s }));
     },

@@ -59,7 +59,25 @@ export default function CallsPage() {
   }
 
   useEffect(() => {
-    start();
+    async function loadDispatchedCalls() {
+      const requirementId = localStorage.getItem("scout_requirement_id");
+      if (!requirementId) { start(); return; }
+      try {
+        const response = await fetch(`/api/orchestrator/requirements/${requirementId}/calls`, { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok || !result.calls?.length) { start(); return; }
+        setCalls(result.calls.map((call: { listing_id: string; listing_name: string; state: string; transcript?: string; outcome?: CallRecord["outcome"] }) => ({
+          listing_id: call.listing_id,
+          listing_name: call.listing_name,
+          persona: "OpenStreetMap candidate",
+          phase: call.state === "completed" ? "completed" : call.state === "in_progress" ? "live" : "queued",
+          transcript: call.transcript ? [{ index: 0, speaker: "seller", text: call.transcript }] : [],
+          outcome: call.outcome ?? undefined,
+        })));
+        setDone(result.calls.every((call: { state: string }) => call.state === "completed"));
+      } catch { start(); }
+    }
+    void loadDispatchedCalls();
     fetch("/api/orchestrator/health", { cache: "no-store" })
       .then((res) => setOrchestratorOnline(res.ok))
       .catch(() => setOrchestratorOnline(false));

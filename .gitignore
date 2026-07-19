@@ -13,10 +13,10 @@ coverage/
 # Local run data and temporary inspection files
 tmp/
 data/local/
+apps/orchestrator/data/local/
 recordings/
 
 # IDE and OS files
 .DS_Store
 Thumbs.db
 .vscode/
-

@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const ALLOWED_ROOTS = new Set(["health", "calls", "report", "strategy"]);
+const ALLOWED_ROOTS = new Set(["health", "calls", "report", "strategy", "requirements"]);
 
 type Context = { params: { path: string[] } };
 
