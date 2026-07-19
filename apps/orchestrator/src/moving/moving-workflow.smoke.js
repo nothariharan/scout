@@ -11,6 +11,9 @@ async function api(method, path, body) { const headers = { 'content-type': 'appl
 const request = await api('POST', '/requirements', { spec: movingRequest });
 await api('POST', `/requirements/${request.body.id}/confirm`);
 await api('POST', `/requirements/${request.body.id}/discover`);
+const manual = await api('POST', `/requirements/${request.body.id}/candidates`, { listing_name: 'Consented test line', phone: '+15555550102' });
+assert.equal(manual.status, 201);
+assert.match(manual.body.candidate.listing_id, /^manual_consented_test_line_/);
 const dispatched = await api('POST', `/requirements/${request.body.id}/dispatch`, { listing_ids: ['mover_1'] });
 const callId = dispatched.body.calls[0].call_id;
 assert.match(callId, /^moving_req_/);

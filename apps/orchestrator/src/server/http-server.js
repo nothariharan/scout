@@ -124,6 +124,15 @@ async function route(req, res, context) {
     const record = await requirementStore.get(candidatesMatch[1]);
     return record ? send(res, 200, { candidates: record.candidates ?? [] }) : send(res, 404, { error: 'requirement not found' });
   }
+  if (method === 'POST' && candidatesMatch) {
+    const record = await requirementStore.get(candidatesMatch[1]);
+    if (!record) return send(res, 404, { error: 'requirement not found' });
+    if (!record.confirmed_at) return send(res, 409, { error: 'confirm the requirement before adding a call candidate' });
+    const body = await readBody(req);
+    const candidate = createManualCandidate(body, record.candidates ?? []);
+    await requirementStore.setCandidates(record.id, [...(record.candidates ?? []), candidate]);
+    return send(res, 201, { candidate });
+  }
 
   const requestCallsMatch = pathname.match(/^\/requirements\/([^/]+)\/calls$/);
   if (method === 'GET' && requestCallsMatch) {
@@ -235,4 +244,21 @@ function isAgentToolPath(method, pathname) {
 function hasAgentToolAccess(req) {
   const secret = process.env.SCOUT_AGENT_TOOL_SECRET;
   return !secret || req.headers['x-scout-agent-secret'] === secret;
+}
+
+function createManualCandidate(input = {}, existing = []) {
+  const listingName = String(input.listing_name ?? '').trim();
+  const phone = String(input.phone ?? '').trim();
+  if (!listingName) throw new Error('manual candidate requires a business name');
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error('manual candidate phone must use E.164 format, for example +16055550123');
+  const stem = listingName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'test_contact';
+  const listingId = `manual_${stem}_${existing.filter((candidate) => candidate.listing_id?.startsWith(`manual_${stem}_`)).length + 1}`;
+  return {
+    listing_id: listingId,
+    listing_name: listingName,
+    phone,
+    service_type: 'moving',
+    source: 'manual_consented_test',
+    address: String(input.address ?? 'Manually supplied test contact').trim(),
+  };
 }

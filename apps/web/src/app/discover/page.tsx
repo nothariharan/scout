@@ -21,6 +21,9 @@ export default function DiscoverPage() {
   const [dispatching, setDispatching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [manualName, setManualName] = useState("");
+  const [manualPhone, setManualPhone] = useState("");
+  const [addingManual, setAddingManual] = useState(false);
 
   const requirementId = typeof window === "undefined" ? null : localStorage.getItem("scout_moving_requirement_id") ?? localStorage.getItem("scout_requirement_id");
   const callable = useMemo(() => candidates.filter((candidate) => candidate.phone), [candidates]);
@@ -81,6 +84,24 @@ export default function DiscoverPage() {
     finally { setDispatching(false); }
   }
 
+  async function addManualContact(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!requirementId) { setError("Confirm a moving brief before adding a test contact."); return; }
+    setAddingManual(true); setError(null);
+    try {
+      const response = await fetch(`/api/orchestrator/requirements/${requirementId}/candidates`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ listing_name: manualName, phone: manualPhone }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Could not add test contact.");
+      setCandidates((current) => [...current, result.candidate]);
+      setSelected((current) => new Set([...current, result.candidate.listing_id]));
+      setManualName(""); setManualPhone("");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not add test contact."); }
+    finally { setAddingManual(false); }
+  }
+
   const origin = [brief?.origin?.area, brief?.origin?.city].filter(Boolean).join(", ") || "your origin";
   const destination = [brief?.destination?.area, brief?.destination?.city].filter(Boolean).join(", ") || "destination";
 
@@ -99,6 +120,8 @@ export default function DiscoverPage() {
       <div className="card p-4"><p className="mono text-[10px] uppercase text-charcoal/50">Move scope</p><p className="mt-2 text-sm">{brief?.home_size?.replace(/_/g, " ") ?? "Not confirmed"}</p></div>
       <div className="card p-4"><p className="mono text-[10px] uppercase text-charcoal/50">Callable listings</p><p className="mt-2 text-sm">{callable.length} with published phone numbers</p></div>
     </section>
+
+    <details className="card p-4"><summary className="cursor-pointer font-medium text-ink">Add a consented test contact</summary><p className="mt-2 text-sm text-charcoal/65">Use this only for a number you are authorized to call, such as your own verified trial number. Scout requires E.164 format and still keeps outbound calling disabled until you explicitly enable it.</p><form onSubmit={addManualContact} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><input value={manualName} onChange={(event) => setManualName(event.target.value)} required className="rounded-md border border-line bg-white px-3 py-2 text-sm" placeholder="Test contact name" /><input value={manualPhone} onChange={(event) => setManualPhone(event.target.value)} required pattern="\+[1-9][0-9]{7,14}" className="rounded-md border border-line bg-white px-3 py-2 text-sm" placeholder="+16055550123" /><button disabled={addingManual} className="btn justify-center">{addingManual ? "ADDING…" : "ADD TEST CONTACT"}</button></form></details>
 
     <ol className="card divide-y divide-line">
       {!candidates.length && <li className="p-6 text-sm text-charcoal/60">Search OpenStreetMap to build the call list. Scout does not invent vendors or phone numbers.</li>}
