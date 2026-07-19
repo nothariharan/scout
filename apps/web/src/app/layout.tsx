@@ -5,7 +5,7 @@ import { StageNav } from "@/components/StageNav";
 export const metadata: Metadata = {
   title: "Scout — the Negotiator",
   description:
-    "Evidence-backed voice negotiation for Indian real estate: one requirement, parallel calls, honest leverage, a ranked shortlist.",
+    "An autonomous buying agent that researches, negotiates, and learns from every deal.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

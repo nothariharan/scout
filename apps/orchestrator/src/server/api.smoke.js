@@ -44,6 +44,10 @@ await api('POST', `/calls/${c2.call_id}/quote`, {
 const lev = await api('GET', `/calls/${c2.call_id}/leverage`);
 console.log('\nMid-call leverage offered to Negotiator for pg_b:');
 console.log(JSON.stringify(lev.leverage, null, 2));
+const strategy = await api('POST', `/calls/${c2.call_id}/strategy`, {
+  vertical: 'moving', target_price: 10000, reserve_price: 12000, counter_round: 1,
+});
+assert.equal(strategy.strategy.next_action.action, 'mention_verified_competitor', 'the engine must use real leverage, not a model guess');
 await api('POST', `/calls/${c2.call_id}/quote`, {
   brokerage_onetime: 4000, first_quoted_effective: 14833, final_quoted_effective: 13500, price_moved: true,
 });

@@ -9,11 +9,13 @@
 //   POST /calls                    { listing_id, listing_name?, phone? } -> session
 //   POST /calls/:id/quote          partial quote fields written mid-call
 //   GET  /calls/:id/leverage       real leverage for the Negotiator
+//   POST /calls/:id/strategy       bounded next-action decision for the voice agent
 //   POST /calls/:id/outcome        { status, reason?, callback_at? }
 //   GET  /report                   ranked comparison + recommendation
 
 import http from 'node:http';
 import { createNegotiationService } from './negotiation-service.js';
+import { planNegotiation } from '../negotiation/strategy-engine.js';
 
 export function createServer({ requirement, benchmark } = {}) {
   const service = createNegotiationService({ requirement, benchmark });
@@ -60,6 +62,17 @@ async function route(req, res, service) {
   const leverageMatch = pathname.match(/^\/calls\/([^/]+)\/leverage$/);
   if (method === 'GET' && leverageMatch) {
     return send(res, 200, { leverage: service.getLeverage(leverageMatch[1]) });
+  }
+
+  const strategyMatch = pathname.match(/^\/calls\/([^/]+)\/strategy$/);
+  if (method === 'POST' && strategyMatch) {
+    const body = await readBody(req);
+    return send(res, 200, { strategy: service.getStrategy(strategyMatch[1], body) });
+  }
+
+  if (method === 'POST' && pathname === '/strategy') {
+    const body = await readBody(req);
+    return send(res, 200, { strategy: planNegotiation(body) });
   }
 
   const outcomeMatch = pathname.match(/^\/calls\/([^/]+)\/outcome$/);

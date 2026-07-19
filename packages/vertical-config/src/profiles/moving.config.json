@@ -1,0 +1,27 @@
+{
+  "vertical_name": "moving",
+  "display_name": "Moving companies",
+  "currency": "USD",
+  "intake_schema": [
+    "origin", "destination", "move_date", "home_size", "inventory", "stairs", "packing_needed", "budget"
+  ],
+  "price_model": {
+    "primary_metric": "binding_total",
+    "required_quote_items": ["base_price", "packing", "stairs", "long_carry", "fuel", "insurance"],
+    "red_flag_threshold_percent": 30
+  },
+  "negotiation_policy": {
+    "max_counter_rounds": { "aggressive": 3, "balanced": 2, "fast": 1 },
+    "target_discount_percent": { "aggressive": 14, "balanced": 8, "fast": 3 },
+    "concession_curve": [0.6, 0.3, 0.1],
+    "allow_tradeables": ["packing", "fuel", "long_carry", "insurance"],
+    "truthful_leverage_only": true,
+    "never_commit_funds": true
+  },
+  "fraud_rules": [
+    { "id": "hostage_load_risk", "trigger_keywords": ["cash before unloading", "pay before delivery"], "action": "flag_high_risk" },
+    { "id": "non_binding_quote", "trigger_keywords": ["estimate only", "final price after loading"], "action": "flag_caution" }
+  ],
+  "language_defaults": { "US": ["en"], "IN": ["en", "hi"] },
+  "seller_personas": ["transparent_operator", "fee_padder", "hard_seller", "stonewaller"]
+}

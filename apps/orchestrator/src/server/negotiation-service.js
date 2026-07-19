@@ -11,6 +11,8 @@ import { capturePriceDrop } from '../negotiation/price-drop.js';
 import { buildLeverage } from '../leverage/leverage-builder.js';
 import { rankQuotes } from '../ranking/rank-quotes.js';
 import { generateRecommendation } from '../transcripts/recommend.js';
+import { planNegotiation } from '../negotiation/strategy-engine.js';
+import { createVendorIntelligenceStore } from '../negotiation/vendor-intelligence.js';
 
 /**
  * @param {object} args
@@ -20,6 +22,7 @@ import { generateRecommendation } from '../transcripts/recommend.js';
 export function createNegotiationService({ requirement, benchmark } = {}) {
   const sessions = createCallSessionStore();
   const store = createQuotesStore(); // itemized, non-fraud quotes => real leverage
+  const vendorIntelligence = createVendorIntelligenceStore();
   let assessedQuotes = []; // every closed call with fields => the report
   const benchmarkValue = benchmark?.effective_monthly ?? undefined;
 
@@ -45,6 +48,27 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
       ? { listing_id: session.listing_id, ...session.rawFields }
       : undefined;
     return buildLeverage({ store, benchmark, targetQuote });
+  }
+
+  /** Voice agents receive this bounded plan and only verbalize it. */
+  function getStrategy(callId, fields = {}) {
+    const session = sessions.get(callId);
+    if (!session) throw new Error(`unknown call ${callId}`);
+    if (Object.keys(fields).length > 0) sessions.patchFields(callId, fields);
+    const updated = sessions.get(callId);
+    const raw = updated.rawFields;
+    return planNegotiation({
+      vertical: fields.vertical ?? 'moving',
+      posture: requirement?.negotiation_posture ?? 'balanced',
+      current_offer: raw.final_quoted_effective ?? raw.first_quoted_effective ?? raw.base_rent,
+      target_price: fields.target_price ?? requirement?.budget?.ideal,
+      reserve_price: fields.reserve_price ?? requirement?.budget?.ceiling,
+      fair_market_value: benchmarkValue,
+      counter_round: fields.counter_round ?? 0,
+      leverage: getLeverage(callId).map((item) => ({ ...item, verified: true })),
+      transcript: updated.transcript,
+      vendor: vendorIntelligence.get(updated.listing_id),
+    });
   }
 
   /** Finalize a call into a structured outcome; assess + record the quote. */
@@ -85,6 +109,15 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
       store.addConfirmed(quote);
     }
 
+    vendorIntelligence.recordOutcome({
+      vendor_id: session.listing_id,
+      first_offer: quote.first_quoted_effective,
+      final_offer: quote.final_quoted_effective,
+      counter_rounds: Number(session.rawFields.counter_rounds) || 0,
+      outcome: outcome?.status,
+      signals: quote.fraud_signals,
+    });
+
     return { session: sessions.get(callId), quote };
   }
 
@@ -95,5 +128,5 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
     return { ranked, recommendation, benchmark };
   }
 
-  return { startCall, listCalls, writeQuoteFields, getLeverage, closeCall, report, sessions, store };
+  return { startCall, listCalls, writeQuoteFields, getLeverage, getStrategy, closeCall, report, sessions, store, vendorIntelligence };
 }
