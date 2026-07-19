@@ -18,6 +18,7 @@ import { parseTranscriptToQuote } from '../transcripts/parse-transcript.js';
 import { isValidOutcome, CALL_OUTCOME_STATUSES } from '../outcomes/call-outcome.js';
 import { discoverCandidates } from '../discovery/places-client.js';
 import { resolveBenchmark } from '../benchmark/benchmark-service.js';
+import { placeCall } from '../telephony/elevenlabs-telephony.js';
 
 /**
  * @param {object} args
@@ -115,9 +116,20 @@ export function createNegotiationService({ requirement, benchmark, fallbackByPin
     return buildLeverage({ store, benchmark: currentBenchmark, targetQuote });
   }
 
-  /** Call-start personalization webhook: return conversation_initiation_client_data. */
-  function personalize({ call_sid } = {}) {
-    const session = call_sid ? sessions.getByCallSid(call_sid) : null;
+  /** Call-start personalization webhook: return conversation_initiation_client_data.
+   *  Creates a session for the call if one doesn't exist yet (ElevenLabs-initiated
+   *  calls), so the agent always gets a real call_id + the confirmed job spec. */
+  function personalize({ called_number, call_sid } = {}) {
+    let session = call_sid ? sessions.getByCallSid(call_sid) : null;
+    if (!session && call_sid) {
+      session = sessions.create({ listing_id: called_number ?? call_sid, phone: called_number ?? '', call_sid });
+      emit('call_started', {
+        call_id: session.call_id,
+        listing_id: session.listing_id,
+        listing_name: session.listing_name,
+        state: session.state,
+      });
+    }
     return buildInitiationData(currentRequirement ?? {}, {
       callId: session?.call_id ?? null,
       listingId: session?.listing_id ?? null,
@@ -127,6 +139,22 @@ export function createNegotiationService({ requirement, benchmark, fallbackByPin
   /** Associate an ElevenLabs conversation id with a session (post-call matching). */
   function linkConversation(callId, conversationId) {
     return sessions.linkConversation(callId, conversationId);
+  }
+
+  /** Place an outbound call for a session via ElevenLabs telephony; link its ids.
+   *  No-ops safely (placed:false) until ELEVENLABS_* telephony env is configured. */
+  async function dial(callId) {
+    const session = sessions.get(callId);
+    if (!session) throw new Error(`unknown call ${callId}`);
+    const initiationData = buildInitiationData(currentRequirement ?? {}, {
+      callId: session.call_id,
+      listingId: session.listing_id,
+    });
+    const result = await placeCall({ toNumber: session.phone, initiationData });
+    if (result.callSid) sessions.linkCallSid(callId, result.callSid);
+    if (result.conversationId) sessions.linkConversation(callId, result.conversationId);
+    emit('call_dialed', { call_id: callId, placed: result.placed, call_sid: result.callSid ?? null });
+    return { call_id: callId, ...result };
   }
 
   /** Post-call webhook: attach transcript + recording evidence; recover fields. */
@@ -231,6 +259,7 @@ export function createNegotiationService({ requirement, benchmark, fallbackByPin
     getLeverage,
     personalize,
     linkConversation,
+    dial,
     ingestPostCall,
     closeCall,
     report,

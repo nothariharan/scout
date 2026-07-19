@@ -16,6 +16,8 @@ import { createBenchmarkService } from '../src/benchmark/benchmark-service.js';
 import { parseTranscriptToQuote } from '../src/transcripts/parse-transcript.js';
 import { generateRecommendation } from '../src/transcripts/recommend.js';
 import { placeCall, placeBatch } from '../src/telephony/elevenlabs-telephony.js';
+import { discoverCandidates } from '../src/discovery/places-client.js';
+import { createNegotiationService } from '../src/server/negotiation-service.js';
 
 // Replace global fetch with a request-capturing stub.
 function mockFetch(handler) {
@@ -174,5 +176,65 @@ test('connectors no-op safely without credentials (no fetch attempted)', async (
     assert.equal(fetched, false); // guarded before any network call
   } finally {
     globalThis.fetch = original;
+  }
+});
+
+test('places-client: searchNearby request matches Places API (New) docs', async () => {
+  process.env.GOOGLE_PLACES_API_KEY = 'gpk-test';
+  const m = mockFetch(ok({
+    places: [{
+      id: 'ChIJ1', displayName: { text: 'Zolo Nest PG' }, nationalPhoneNumber: '090000 00001',
+      location: { latitude: 12.9345, longitude: 77.6265 }, formattedAddress: '5th Block',
+    }],
+  }));
+  try {
+    const out = await discoverCandidates({ location: { lat: 12.9352, lng: 77.6245 }, dealType: 'pg', radiusMeters: 3000, limit: 5 });
+    const call = m.calls[0];
+    assert.equal(call.url, 'https://places.googleapis.com/v1/places:searchNearby');
+    assert.equal(call.options.headers['x-goog-api-key'], 'gpk-test');
+    assert.match(call.options.headers['x-goog-fieldmask'], /places\.nationalPhoneNumber/);
+    assert.equal(call.body.locationRestriction.circle.center.latitude, 12.9352);
+    assert.equal(call.body.locationRestriction.circle.radius, 3000);
+    assert.equal(out.available, true);
+    assert.equal(out.candidates[0].listing_id, 'ChIJ1');
+    assert.equal(out.candidates[0].listing_name, 'Zolo Nest PG');
+    assert.equal(out.candidates[0].phone, '090000 00001');
+    assert.equal(out.candidates[0].source, 'google_places');
+  } finally {
+    m.restore();
+    delete process.env.GOOGLE_PLACES_API_KEY;
+  }
+});
+
+test('places-client: no key or no coords -> available false', async () => {
+  delete process.env.GOOGLE_PLACES_API_KEY;
+  assert.equal((await discoverCandidates({ location: { lat: 1, lng: 2 } })).available, false);
+  process.env.GOOGLE_PLACES_API_KEY = 'gpk-test';
+  try {
+    const noCoords = await discoverCandidates({ location: { area: 'x' } });
+    assert.equal(noCoords.available, false);
+  } finally {
+    delete process.env.GOOGLE_PLACES_API_KEY;
+  }
+});
+
+test('dial: places outbound call and links callSid/conversationId', async () => {
+  process.env.ELEVENLABS_API_KEY = 'xi-test';
+  process.env.ELEVENLABS_NEGOTIATOR_AGENT_ID = 'agent_1';
+  process.env.ELEVENLABS_AGENT_PHONE_NUMBER_ID = 'phone_1';
+  const m = mockFetch(ok({ success: true, conversation_id: 'conv_9', callSid: 'CA9' }));
+  try {
+    const svc = createNegotiationService({ requirement: { location: {} } });
+    const c = svc.startCall({ listing_id: 'a', phone: '+9111' });
+    const r = await svc.dial(c.call_id);
+    assert.equal(r.placed, true);
+    assert.equal(r.callSid, 'CA9');
+    assert.equal(svc.sessions.getByCallSid('CA9').call_id, c.call_id);
+    assert.equal(svc.sessions.getByConversationId('conv_9').call_id, c.call_id);
+  } finally {
+    m.restore();
+    delete process.env.ELEVENLABS_API_KEY;
+    delete process.env.ELEVENLABS_NEGOTIATOR_AGENT_ID;
+    delete process.env.ELEVENLABS_AGENT_PHONE_NUMBER_ID;
   }
 });

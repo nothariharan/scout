@@ -114,6 +114,11 @@ async function route(req, res, service) {
     return send(res, 200, service.closeCall(outcomeMatch[1], json));
   }
 
+  const dialMatch = pathname.match(/^\/calls\/([^/]+)\/dial$/);
+  if (method === 'POST' && dialMatch) {
+    return send(res, 200, await service.dial(dialMatch[1]));
+  }
+
   // --- Read models ---
   if (method === 'GET' && pathname === '/calls') {
     return send(res, 200, service.listCalls());

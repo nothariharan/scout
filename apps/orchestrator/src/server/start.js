@@ -4,8 +4,16 @@
 //   node apps/orchestrator/src/server/start.js   (or: npm run serve)
 
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { createServer } from './http-server.js';
 import { resolveBenchmark } from '../benchmark/benchmark-service.js';
+
+// Auto-load the repo-root .env (Node 20.6+) so keys placed there just work.
+try {
+  process.loadEnvFile(fileURLToPath(new URL('../../../../.env', import.meta.url)));
+} catch {
+  // No .env file present — rely on the ambient environment.
+}
 
 const require = createRequire(import.meta.url);
 const requirement = require('../../../../packages/evals/src/fixtures/sample_requirement.json');

@@ -140,3 +140,13 @@ test('report exposes evidence_refs with transcript/recording links', async () =>
   assert.equal(ref.recording_url, 'https://rec/a.mp3');
   assert.equal(ref.line, 'Owner caved on maintenance');
 });
+
+test('personalize creates a session for an unknown call_sid', () => {
+  const svc = createNegotiationService({ requirement, benchmark });
+  const before = svc.listCalls().length;
+  const data = svc.personalize({ caller_id: '+1', called_number: '+911234', call_sid: 'CA-new' });
+  assert.equal(data.type, 'conversation_initiation_client_data');
+  assert.ok(data.dynamic_variables.call_id);
+  assert.equal(svc.listCalls().length, before + 1);
+  assert.equal(svc.sessions.getByCallSid('CA-new').listing_id, '+911234');
+});

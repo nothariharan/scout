@@ -102,6 +102,7 @@ set (skipped in dev). See `docs/AGENT-TOOLS.md`.
 | `POST /calls/:id/quote` | mid-call: write structured fields |
 | `GET /calls/:id/leverage` | mid-call: real leverage (never invented) |
 | `POST /calls/:id/outcome` | close as itemized_quote / callback_scheduled / declined |
+| `POST /calls/:id/dial` | place the outbound call via ElevenLabs telephony + link ids |
 | `GET /calls`, `GET /calls/:id` | list / read call sessions |
 | `GET /events` | live SSE stream (snapshot + call lifecycle events) |
 | `POST /agent/personalization`, `POST /agent/post-call` | ElevenLabs webhooks (HMAC-verified) |

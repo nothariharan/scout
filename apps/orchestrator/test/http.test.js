@@ -122,3 +122,13 @@ test('GET /events streams a snapshot', async () => {
     await reader.cancel();
   });
 });
+
+test('POST /calls/:id/dial returns 200 (placed:false without telephony keys)', async () => {
+  await withServer(async (base) => {
+    const call = client(base);
+    const c = await call('POST', '/calls', { listing_id: 'a', phone: '+9111' });
+    const d = await call('POST', `/calls/${c.json.call_id}/dial`);
+    assert.equal(d.status, 200);
+    assert.equal(d.json.placed, false);
+  });
+});
