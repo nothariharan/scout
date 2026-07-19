@@ -42,7 +42,7 @@ export async function runComparison({ requirement, calls, benchmark } = {}) {
     normalized.push(quote);
 
     // Only real itemized quotes become confirmed leverage.
-    if (quote.call_outcome?.status === 'itemized_quote') {
+    if (quote.call_outcome?.status === 'itemized_quote' && quote.risk_flag !== 'high_risk') {
       store.addConfirmed(quote);
     }
   }

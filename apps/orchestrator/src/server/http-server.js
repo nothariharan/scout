@@ -5,6 +5,7 @@
 //
 // Routes:
 //   GET  /health
+//   GET  /calls                    -> active/completed sessions for the live ledger
 //   POST /calls                    { listing_id, listing_name?, phone? } -> session
 //   POST /calls/:id/quote          partial quote fields written mid-call
 //   GET  /calls/:id/leverage       real leverage for the Negotiator
@@ -33,6 +34,10 @@ async function route(req, res, service) {
   const { pathname } = url;
   const { method } = req;
 
+  if (method === 'OPTIONS') {
+    return send(res, 204, null);
+  }
+
   if (method === 'GET' && pathname === '/health') {
     return send(res, 200, { ok: true });
   }
@@ -40,6 +45,10 @@ async function route(req, res, service) {
   if (method === 'POST' && pathname === '/calls') {
     const body = await readBody(req);
     return send(res, 201, service.startCall(body));
+  }
+
+  if (method === 'GET' && pathname === '/calls') {
+    return send(res, 200, { calls: service.listCalls() });
   }
 
   const quoteMatch = pathname.match(/^\/calls\/([^/]+)\/quote$/);
@@ -85,6 +94,13 @@ function readBody(req) {
 }
 
 function send(res, status, payload) {
-  res.writeHead(status, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(payload));
+  res.writeHead(status, {
+    'content-type': 'application/json',
+    // The Next.js app normally proxies these routes. This also keeps local
+    // development usable when the browser talks to the orchestrator directly.
+    'access-control-allow-origin': process.env.WEB_ORIGIN || '*',
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'access-control-allow-headers': 'content-type',
+  });
+  res.end(payload == null ? '' : JSON.stringify(payload));
 }

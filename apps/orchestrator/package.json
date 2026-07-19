@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "demo": "node src/demo.smoke.js",
-    "test": "node src/demo.smoke.js",
+    "test": "node src/demo.smoke.js && node src/server/api.smoke.js",
     "serve": "node src/server/start.js"
   },
   "dependencies": {

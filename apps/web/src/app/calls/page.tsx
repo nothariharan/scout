@@ -29,6 +29,7 @@ export default function CallsPage() {
   const [calls, setCalls] = useState<CallRecord[]>(blankCalls);
   const [done, setDone] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [orchestratorOnline, setOrchestratorOnline] = useState<boolean | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
   function start() {
@@ -59,6 +60,9 @@ export default function CallsPage() {
 
   useEffect(() => {
     start();
+    fetch("/api/orchestrator/health", { cache: "no-store" })
+      .then((res) => setOrchestratorOnline(res.ok))
+      .catch(() => setOrchestratorOnline(false));
     return () => esRef.current?.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -75,7 +79,14 @@ export default function CallsPage() {
               ? `${liveCount} call${liveCount > 1 ? "s" : ""} in progress.`
               : done
                 ? "All calls complete."
-                : "Connecting…"}
+              : "Connecting…"}
+          </p>
+          <p className="mono mt-1 text-[10px] uppercase tracking-wide text-charcoal/45">
+            {orchestratorOnline === true
+              ? "Orchestrator connected · agent tools write live outcomes"
+              : orchestratorOnline === false
+                ? "Demo replay · start the orchestrator for live agent outcomes"
+                : "Checking orchestrator connection…"}
           </p>
         </div>
         <div className="flex items-center gap-2">

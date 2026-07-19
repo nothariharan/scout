@@ -7,6 +7,7 @@
 //   node apps/orchestrator/src/demo.smoke.js
 
 import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
 import { runComparison } from './pipeline.js';
 import { buildLeverage } from './leverage/leverage-builder.js';
 
@@ -35,6 +36,11 @@ const calls = sampleQuotes.map((q) => {
 const benchmark = { effective_monthly: 14000, source: 'fallback_estimate' };
 
 const { ranked, recommendation, store } = await runComparison({ requirement, calls, benchmark });
+
+assert.equal(ranked[0].risk_flag, 'verified', 'a high-risk quote must never rank first');
+assert.equal(ranked.find((q) => q.listing_id === 'pg_kor_003')?.rank, 3, 'the scam quote must be last');
+assert.equal(ranked.find((q) => q.price_moved)?.final_quoted_effective, 13500, 'the concession must be captured');
+assert.equal(store.size, 2, 'high-risk quotes must never become negotiation leverage');
 
 console.log('\n=== Ranked comparison (high_risk never #1) ===');
 for (const q of ranked) {

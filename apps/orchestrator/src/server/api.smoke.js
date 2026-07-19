@@ -7,6 +7,7 @@
 //   node apps/orchestrator/src/server/api.smoke.js
 
 import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
 import { createServer } from './http-server.js';
 
 const require = createRequire(import.meta.url);
@@ -57,6 +58,11 @@ await api('POST', `/calls/${c3.call_id}/quote`, {
 await api('POST', `/calls/${c3.call_id}/outcome`, { status: 'declined', reason: 'pre-visit deposit demanded' });
 
 const report = await api('GET', '/report');
+const calls = await api('GET', '/calls');
+assert.equal(calls.calls.length, 3, 'the live ledger must expose every call session');
+assert.equal(report.ranked[0].listing_id, 'pg_b', 'the verified negotiated quote should rank first');
+assert.equal(report.ranked.at(-1).risk_flag, 'high_risk', 'the deposit scam must rank last');
+assert.equal(report.ranked[0].final_quoted_effective, 13500, 'the negotiated price drop must reach the report');
 console.log('\n=== Ranked report ===');
 for (const q of report.ranked) {
   const moved = q.price_moved ? ` | price moved ${q.first_quoted_effective}->${q.final_quoted_effective}` : '';

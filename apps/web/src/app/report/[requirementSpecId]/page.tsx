@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   DEMO_CANDIDATES,
   DEMO_QUOTES,
@@ -9,17 +12,37 @@ import { QuoteTable } from "@/components/QuoteTable";
 import { RiskBadge } from "@/components/RiskBadge";
 import { MapPanel } from "@/components/MapPanel";
 import { fraudLabel, inr } from "@/lib/format";
-import type { EvidenceRef } from "@/lib/types";
+import type { EvidenceRef, Quote } from "@/lib/types";
+
+type OrchestratorReport = {
+  ranked: Quote[];
+  recommendation: { headline?: string; narrative?: string };
+};
 
 export default function ReportPage({ params }: { params: { requirementSpecId: string } }) {
-  const rec = DEMO_RECOMMENDATION;
+  const [liveReport, setLiveReport] = useState<OrchestratorReport | null>(null);
   const spec = DEMO_REQUIREMENT.spec;
 
-  const ranked = rec.ranked_listing_ids
+  useEffect(() => {
+    let active = true;
+    fetch("/api/orchestrator/report", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: OrchestratorReport | null) => {
+        if (active && data?.ranked?.length) setLiveReport(data);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const demoRanked = DEMO_RECOMMENDATION.ranked_listing_ids
     .map((id) => DEMO_QUOTES.find((q) => q.listing_id === id))
     .filter((q): q is NonNullable<typeof q> => Boolean(q));
+  const ranked = liveReport?.ranked ?? demoRanked;
+  const topPickId = ranked[0]?.listing_id ?? DEMO_RECOMMENDATION.top_pick.listing_id;
 
-  const topQuote = ranked.find((q) => q.listing_id === rec.top_pick.listing_id);
+  const topQuote = ranked.find((q) => q.listing_id === topPickId);
   const priceMoved = ranked.filter((q) => q.price_moved).length;
   const highRisk = ranked.filter((q) => q.risk_flag === "high_risk").length;
 
@@ -46,7 +69,7 @@ export default function ReportPage({ params }: { params: { requirementSpecId: st
           </p>
           <p className="mono mt-0.5 text-[11px] text-charcoal/40">{params.requirementSpecId}</p>
         </div>
-        <div className="rec-stamp">Top Pick Verified</div>
+          <div className="rec-stamp">{liveReport ? "Live Report" : "Demo Report"}</div>
       </header>
 
       {/* Case-file metadata line. */}
@@ -61,7 +84,7 @@ export default function ReportPage({ params }: { params: { requirementSpecId: st
         <h2 className="mono text-xs uppercase tracking-widest text-charcoal/55">
           Comparison · by effective monthly cost
         </h2>
-        <QuoteTable quotes={ranked} topPickId={rec.top_pick.listing_id} ceiling={spec.budget.ceiling} />
+        <QuoteTable quotes={ranked} topPickId={topPickId} ceiling={spec.budget.ceiling} />
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
@@ -72,17 +95,25 @@ export default function ReportPage({ params }: { params: { requirementSpecId: st
               <h3 className="text-lg">{topQuote?.listing_name}</h3>
               <RiskBadge flag={topQuote?.risk_flag ?? "verified"} />
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-charcoal/85">{rec.top_pick.reasoning}</p>
+            <p className="mt-3 text-sm leading-relaxed text-charcoal/85">
+              {liveReport?.recommendation.narrative ?? liveReport?.recommendation.headline ?? DEMO_RECOMMENDATION.top_pick.reasoning}
+            </p>
 
             <div className="wire my-4" />
             <div className="mono mb-2 text-[11px] uppercase tracking-wide text-charcoal/55">
-              Evidence · each claim → a transcript line
+              {liveReport ? "Evidence · linked to each call outcome" : "Evidence · each claim → a transcript line"}
             </div>
-            <ul className="space-y-2">
-              {rec.top_pick.evidence_refs.map((e, i) => (
-                <EvidenceItem key={i} refItem={e} />
-              ))}
-            </ul>
+            {liveReport ? (
+              <p className="text-sm text-charcoal/70">
+                Call outcomes and recording/transcript URLs are returned by the orchestrator. The demo transcript ledger remains visible in Live activity.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {DEMO_RECOMMENDATION.top_pick.evidence_refs.map((e, i) => (
+                  <EvidenceItem key={i} refItem={e} />
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 

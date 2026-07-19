@@ -28,6 +28,11 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
     return sessions.create(candidate);
   }
 
+  /** Snapshot for the web live-activity ledger. */
+  function listCalls() {
+    return sessions.all();
+  }
+
   /** Mid-call: agent writes structured fields into the session (immutable). */
   function writeQuoteFields(callId, fields) {
     return sessions.patchFields(callId, fields);
@@ -90,5 +95,5 @@ export function createNegotiationService({ requirement, benchmark } = {}) {
     return { ranked, recommendation, benchmark };
   }
 
-  return { startCall, writeQuoteFields, getLeverage, closeCall, report, sessions, store };
+  return { startCall, listCalls, writeQuoteFields, getLeverage, closeCall, report, sessions, store };
 }
