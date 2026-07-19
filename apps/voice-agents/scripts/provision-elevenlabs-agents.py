@@ -1,4 +1,4 @@
-"""Provision Scout's India-focused real-estate ElevenLabs agents.
+"""Provision Scout's universal outcome-intake and outbound ElevenLabs agents.
 
 This changes agent configuration only. It never places a telephone call.
 Webhook tools are attached only when the public, authenticated orchestrator is
@@ -55,11 +55,21 @@ def negotiator_tools():
 
 def intake_tools():
     props = {
-        "deal_type": {"type": "string", "description": "Confirmed rental product.", "enum": ["rental_apartment", "pg", "hostel", "co_living", "short_stay_rental"]}, "area": {"type": "string", "description": "Confirmed target locality."}, "city": {"type": "string", "description": "Confirmed target city."}, "pincode": {"type": "string", "description": "Optional PIN code."}, "budget_ideal": {"type": "number", "description": "Target effective monthly budget."}, "budget_ceiling": {"type": "number", "description": "Hard effective monthly ceiling."}, "currency": {"type": "string", "description": "Currency code, normally INR."}, "occupancy": {"type": "number", "description": "Number of occupants."}, "furnishing": {"type": "string", "description": "Furnishing preference.", "enum": ["unfurnished", "semi", "furnished"]}, "amenities": {"type": "array", "items": {"type": "string", "description": "One requested amenity."}, "description": "Requested amenities."}, "move_in_date": {"type": "string", "description": "Move-in date in YYYY-MM-DD."}, "lease_duration_months": {"type": "number", "description": "Planned rental duration in months."}, "deal_breakers": {"type": "array", "items": {"type": "string", "description": "One non-negotiable requirement."}, "description": "Non-negotiable requirements."}, "negotiation_posture": {"type": "string", "description": "Requested negotiation posture.", "enum": ["fast", "balanced", "aggressive"]}, "language_pref": {"type": "string", "description": "Preferred call language."}
+        "outcome": {"type": "string", "description": "The confirmed result Scout should achieve."},
+        "task_type": {"type": "string", "description": "Task category, such as property_stay, vendor_service, moving, client_outreach, or custom_outbound."},
+        "market": {"type": "string", "description": "Where Scout should discover targets, when discovery is needed."},
+        "city": {"type": "string", "description": "Optional city or region."},
+        "supplied_targets": {"type": "array", "items": {"type": "string"}, "description": "Authorized target names and phone numbers supplied by the user."},
+        "questions_to_ask": {"type": "array", "items": {"type": "string"}, "description": "Questions Scout must ask every target."},
+        "budget_ideal": {"type": "number", "description": "Preferred price or commercial target, when relevant."},
+        "budget_ceiling": {"type": "number", "description": "Hard maximum Scout must never exceed, when relevant."},
+        "currency": {"type": "string", "description": "ISO currency code when money is involved."},
+        "negotiation_authority": {"type": "string", "description": "Whether Scout may confirm only, negotiate within limits, or seek provisional agreement.", "enum": ["confirm_only", "negotiate", "provisional_agreement"]},
+        "deadline": {"type": "string", "description": "Confirmed deadline or timing constraint."},
+        "deal_breakers": {"type": "array", "items": {"type": "string"}, "description": "Hard limits and conditions Scout must preserve."},
+        "language_pref": {"type": "string", "description": "Preferred language for calls."},
     }
-    required = ["deal_type", "area", "city", "budget_ideal", "budget_ceiling", "currency", "occupancy", "furnishing", "move_in_date", "lease_duration_months"]
-    return system_tools() + [{"type": "client", "name": "submit_real_estate_brief", "description": "Call exactly once after the user confirms the complete factual property brief. Never invent a missing value.", "expects_response": True, "parameters": {"type": "object", "required": required, "properties": props}}]
-
+    return system_tools() + [{"type": "client", "name": "submit_scout_outcome", "description": "Call exactly once after the user explicitly confirms the complete outbound outcome. Never invent a missing value or contact authorization.", "expects_response": True, "parameters": {"type": "object", "required": ["outcome", "task_type", "negotiation_authority"], "properties": props}}]
 
 def config(definition):
     multilingual = definition.get("language") == "hi"
@@ -76,13 +86,13 @@ def config(definition):
     return configuration
 
 
-INTAKE_PROMPT = """You are Scout, a warm and practical India real-estate intake concierge. Create one accurate, confirmed rental, PG, hostel, co-living, or short-stay brief for a separate negotiation agent. You do not negotiate or book.
+INTAKE_PROMPT = """You are Scout, a warm and practical outcome-intake concierge. Create one accurate, confirmed outbound task for a separate calling and negotiation agent. Property, stays, vendors, services, moving, and client outreach are examples, not separate product identities. You do not contact targets, negotiate, or promise a result during intake.
 
-Make this a short, natural interview, never a form dump. Ask one topic at a time and wait for the reply: property type and city/locality; move-in date, stay duration and occupants; total budget and whether it is rent-only or all-inclusive; then non-negotiables such as food, Wi-Fi, security, furnishing, gender restrictions, bathroom, parking, commute, deposit tolerance, maintenance or brokerage concerns. Capture negotiation posture and preferred language.
+Make this a short, natural interview, never a form dump. Ask one topic at a time and wait for the reply: the desired outcome; targets or discovery area; questions to ask; timing and follow-up rules; preferred terms and hard limits; negotiation authority; authorized contacts; then preferred language.
 
 Use the caller's chosen language consistently. If they begin in Hindi, begin in Hindi; if they reply clearly in English, continue in English. Do not mix Hindi and English inside a sentence unless the caller naturally does so. Be concise, respectful, and India-aware.
 
-The user may speak, type, or upload a clear listing, broker message, or property document. Extract only readable facts and ask a focused follow-up for anything material that is absent or ambiguous. Never request payment credentials, claim a property exists, promise availability, or invent a price. Before finishing, read back the complete brief and ask for explicit confirmation. Only after that confirmation call submit_real_estate_brief exactly once."""
+The user may speak, type, or upload a clear document. Extract only readable facts and ask a focused follow-up for anything material that is absent or ambiguous. Never request payment credentials, invent a contact or price, promise availability, or assume permission for a binding commitment. Before finishing, read back the outcome, targets, questions, limits, timing, and authority, then ask for explicit confirmation. Only after that confirmation call submit_scout_outcome exactly once."""
 
 NEGOTIATOR_PROMPT = """You are Scout, an AI assistant calling a hostel owner on behalf of Ramesh, a 19-year-old college student. Ramesh needs a one-week hostel stay near Koramangala 5th Block, Bengaluru, from 26 July. The hard all-inclusive ceiling for this one-week stay is INR 15,000 total, not a monthly amount. He needs Wi-Fi, food, security, written confirmation of every charge, and will not make token payment before a visit.
 
@@ -106,7 +116,7 @@ Close state: if the owner accepts the INR 15,000 all-inclusive target, or gives 
 
 Ask one concise question at a time. Keep a running factual state: never ask a question that the owner has already answered, and never repeat the same sentence after a price is known. Collect rent, deposit, food and maintenance charges, brokerage, all exclusions, one-week availability, visit availability, written terms, and whether the person can approve the price. Ask for an itemised quote. Never pay, reserve, transfer money, accept a token, sign, or make a commitment. If pushed to pay before a visit or written terms, decline politely. After one genuine silence, say one brief check-in; after a second silence, end the call rather than repeating the check-in. Be helpful, calm, and brief."""
 
-AGENTS = [{"name": "Scout Intake Concierge", "first_message": "Hi, I am Scout's AI property intake concierge. I will gather the details once so Scout can compare the right places for you. What kind of place are you looking for?", "prompt": INTAKE_PROMPT, "placeholders": {}, "tools": intake_tools()}, {"name": "Scout Negotiator - Real Estate v2", "legacy_name": "Scout Ramesh Hindi live demo", "language": "hi", "first_message": "नमस्ते, मैं Scout की AI assistant हूँ। मैं Ramesh के लिए Koramangala में hostel के बारे में call कर रही हूँ। क्या अभी दो मिनट बात कर सकते हैं?", "prompt": NEGOTIATOR_PROMPT, "placeholders": {}, "tools": language_detection_tools()}]
+AGENTS = [{"name": "Scout Intake Concierge", "first_message": "Hi, I am Scout's AI intake concierge. Tell me the outcome you want, and I will ask only for the details Scout needs to handle the calls for you.", "prompt": INTAKE_PROMPT, "placeholders": {}, "tools": intake_tools()}, {"name": "Scout Negotiator - Real Estate v2", "legacy_name": "Scout Ramesh Hindi live demo", "language": "hi", "first_message": "नमस्ते, मैं Scout की AI assistant हूँ। मैं Ramesh के लिए Koramangala में hostel के बारे में call कर रही हूँ। क्या अभी दो मिनट बात कर सकते हैं?", "prompt": NEGOTIATOR_PROMPT, "placeholders": {}, "tools": language_detection_tools()}]
 
 NEGOTIATOR_PROMPT += """
 
@@ -115,7 +125,7 @@ ABSOLUTE OUTPUT FIREWALL: Never output private analysis, a plan, tool instructio
 
 # Keep the checked-in agent definition ASCII-safe on Windows terminals while
 # still producing natural Hindi with the selected hi-IN voice.
-AGENTS[0]["first_message"] = "Hi, I’m Scout. I’ll ask a few quick questions so I can negotiate the right place and terms for you. Which area are you looking in?"
+AGENTS[0]["first_message"] = "Hi, I’m Scout. Tell me the outcome you want, and I’ll ask a few quick questions so Scout can handle the calls for you."
 AGENTS[-1]["first_message"] = "Namaste, main Scout ki AI assistant hoon. Main Ramesh ke liye Koramangala mein hostel ke baare mein call kar rahi hoon. Kya abhi do minute baat kar sakte hain?"
 AGENTS[-1]["tools"] = negotiator_demo_tools()
 

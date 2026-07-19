@@ -5,6 +5,7 @@ dist/
 .next/
 .next-*/
 coverage/
+output/
 
 # Environment and secrets
 .env

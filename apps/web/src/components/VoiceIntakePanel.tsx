@@ -1,12 +1,17 @@
 "use client";
 
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import { FileUp, Mic, PhoneOff, ShieldCheck, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type Brief = Record<string, unknown>;
+type OutcomeInput = Record<string, unknown>;
 
 export function VoiceIntakePanel({ onConfirmed }: { onConfirmed: (message: string) => void }) {
-  return <ConversationProvider><VoiceIntake onConfirmed={onConfirmed} /></ConversationProvider>;
+  return (
+    <ConversationProvider>
+      <VoiceIntake onConfirmed={onConfirmed} />
+    </ConversationProvider>
+  );
 }
 
 function VoiceIntake({ onConfirmed }: { onConfirmed: (message: string) => void }) {
@@ -14,25 +19,197 @@ function VoiceIntake({ onConfirmed }: { onConfirmed: (message: string) => void }
   const [notice, setNotice] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const conversation = useConversation({
-    clientTools: { submit_real_estate_brief: async (parameters: Brief) => submitBrief(parameters, onConfirmed) },
-    onError: (error) => setNotice(typeof error === "string" ? error : "Voice intake could not connect."),
+    clientTools: {
+      submit_scout_outcome: async (parameters: OutcomeInput) => submitOutcome(parameters, onConfirmed),
+      // Keep the deployed legacy tool name working while its schema is upgraded.
+      submit_real_estate_brief: async (parameters: OutcomeInput) => submitOutcome(parameters, onConfirmed),
+    },
+    onError: (error) =>
+      setNotice(typeof error === "string" ? error : "Scout could not connect to the voice service."),
   });
 
-  useEffect(() => { void fetch("/api/elevenlabs/intake-agent", { cache: "no-store" }).then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.error); setAgentId(body.agentId); }).catch((cause: unknown) => setNotice(cause instanceof Error ? cause.message : "Voice intake is unavailable.")); }, []);
+  useEffect(() => {
+    void fetch("/api/elevenlabs/intake-agent", { cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error);
+        setAgentId(body.agentId);
+      })
+      .catch((cause: unknown) =>
+        setNotice(cause instanceof Error ? cause.message : "Voice intake is unavailable."),
+      );
+  }, []);
 
-  async function start() { if (!agentId) return; setNotice("Requesting microphone access…"); try { await navigator.mediaDevices.getUserMedia({ audio: true }); conversation.startSession({ agentId }); setNotice("Connected. Tell Scout about the property you need; it will read the summary back before saving it."); } catch { setNotice("Microphone access is required for voice intake. You can continue with the form instead."); } }
-  async function uploadDocument(event: React.ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (!file) return; setUploading(true); try { await conversation.uploadFile(file); setNotice(`${file.name} was sent to Scout. Ask it to extract the property details, then confirm the spoken summary before it saves.`); } catch { setNotice("Scout could not read that file. Try a clear image, PDF, or enter the details in the form."); } finally { setUploading(false); event.target.value = ""; } }
+  const connected = conversation.status === "connected";
+  const connecting = conversation.status === "connecting";
 
-  return <section className="card p-5"><p className="mono text-[10px] uppercase tracking-[0.16em] text-rust">ElevenLabs voice or document intake</p><h2 className="mt-2 text-xl">Describe the place you need—or give Scout a document.</h2><p className="mt-2 text-sm leading-relaxed text-charcoal/70">Scout can extract a rental listing, broker message, or property document, asks only for missing details, reads the summary back, and saves only after your spoken confirmation.</p><div className="mt-4 flex flex-wrap items-center gap-3">{conversation.status === "connected" ? <><button className="btn-ghost" onClick={() => conversation.endSession()}>END INTAKE</button><label className="btn-ghost cursor-pointer">{uploading ? "UPLOADING…" : "ADD DOCUMENT"}<input className="sr-only" type="file" accept="application/pdf,image/*,.txt" disabled={uploading} onChange={(event) => void uploadDocument(event)} /></label></> : <button className="btn" disabled={!agentId || conversation.status === "connecting"} onClick={() => void start()}>{conversation.status === "connecting" ? "CONNECTING…" : "START INTAKE"}</button>}<span className="mono text-[10px] uppercase text-charcoal/50">{conversation.status}</span></div>{notice && <p className="mono mt-3 text-[11px] text-charcoal/65">{notice}</p>}</section>;
+  async function toggleConversation() {
+    if (connected) {
+      await conversation.endSession();
+      setNotice("Voice session ended. Your outcome is saved only after you confirm Scout's summary.");
+      return;
+    }
+    if (!agentId) return;
+
+    setNotice("Requesting microphone access...");
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      await conversation.startSession({ agentId });
+      setNotice(
+        "Connected. Describe the outcome in your own words. Scout will ask for missing targets, questions, limits, and authority before saving.",
+      );
+    } catch {
+      setNotice("Microphone access is required. You can switch to Write the outcome instead.");
+    }
+  }
+
+  async function uploadDocument(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      await conversation.uploadFile(file);
+      setNotice(
+        `${file.name} was sent to Scout. It will extract useful contacts and constraints, ask about anything missing, then read the outcome back for confirmation.`,
+      );
+    } catch {
+      setNotice("Scout could not read that file. Try a clear image, PDF, text file, or use the written outcome.");
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
+  }
+
+  return (
+    <section className="voice-intake-primary">
+      <div className="voice-intake-copy">
+        <p>VOICE OUTCOME</p>
+        <h2>Say what you want handled.</h2>
+        <span>
+          Speak naturally. Scout turns the conversation into one reusable instruction for every target
+          it finds or every contact you provide.
+        </span>
+        <ol>
+          <li><Sparkles size={17} /><span><strong>Understands the goal</strong> and asks only for missing details.</span></li>
+          <li><Mic size={17} /><span><strong>Confirms call questions</strong>, timing, limits, and negotiation authority.</span></li>
+          <li><ShieldCheck size={17} /><span><strong>Reads the outcome back</strong> before anything is saved or called.</span></li>
+        </ol>
+      </div>
+
+      <div className="voice-intake-control">
+        <button
+          type="button"
+          className="voice-orb-button"
+          data-live={connected}
+          disabled={!agentId || connecting}
+          onClick={() => void toggleConversation()}
+          aria-label={connected ? "End voice outcome session" : "Start voice outcome session"}
+        >
+          <span className="voice-orb-core">{connected ? <PhoneOff size={28} /> : <Mic size={30} />}</span>
+          <i aria-hidden="true" />
+          <i aria-hidden="true" />
+        </button>
+        <strong>{connecting ? "Connecting..." : connected ? "Scout is listening" : "Talk to Scout"}</strong>
+        <span>{connected ? "Describe the outcome or answer Scout's next question." : "Tap once, then speak in your own words."}</span>
+        <small data-live={connected}>{connected ? "LIVE VOICE SESSION" : agentId ? "READY" : "VOICE UNAVAILABLE"}</small>
+
+        {connected ? (
+          <label className="voice-upload">
+            <FileUp size={15} /> {uploading ? "Reading file..." : "Add supporting document"}
+            <input
+              className="sr-only"
+              type="file"
+              accept="application/pdf,image/*,.txt,.doc,.docx"
+              disabled={uploading}
+              onChange={(event) => void uploadDocument(event)}
+            />
+          </label>
+        ) : null}
+      </div>
+
+      {notice ? <p className="voice-intake-notice" role="status">{notice}</p> : null}
+    </section>
+  );
 }
 
-async function submitBrief(parameters: Brief, onConfirmed: (message: string) => void) {
-  const value = (name: string) => String(parameters[name] ?? "").trim();
-  const number = (name: string, fallback: number) => Number.isFinite(Number(parameters[name])) ? Number(parameters[name]) : fallback;
-  const spec = { vertical: "real_estate", deal_type: value("deal_type") || "rental_apartment", location: { area: value("area"), city: value("city"), pincode: value("pincode") }, budget: { ideal: number("budget_ideal", 0), ceiling: number("budget_ceiling", 0), currency: value("currency") || "INR" }, negotiation_posture: value("negotiation_posture") || "balanced", occupancy: number("occupancy", 1), furnishing: value("furnishing") || "semi", amenities: Array.isArray(parameters.amenities) ? parameters.amenities.map(String) : [], move_in_date: value("move_in_date"), lease_duration_months: number("lease_duration_months", 11), deal_breakers: Array.isArray(parameters.deal_breakers) ? parameters.deal_breakers.map(String) : [], language_pref: value("language_pref") || "en" };
-  if (!spec.location.area || !spec.location.city || !spec.move_in_date || spec.budget.ideal <= 0 || spec.budget.ceiling < spec.budget.ideal) return "I need the locality and city, move-in date, and a valid ideal budget and ceiling before I can save the brief.";
-  const created = await fetch("/api/orchestrator/requirements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ spec, source_path: "elevenlabs_voice_intake" }) });
-  const record = await created.json(); if (!created.ok) return `I could not save the brief: ${record.error ?? "unknown error"}`;
-  const confirmed = await fetch(`/api/orchestrator/requirements/${record.id}/confirm`, { method: "POST" }); const result = await confirmed.json(); if (!confirmed.ok) return `I could not confirm the brief: ${result.error ?? "unknown error"}`;
-  localStorage.setItem("scout_requirement_id", result.id); localStorage.setItem("scout_real_estate_requirement_id", result.id); onConfirmed("Voice brief confirmed. Continue to Property Research when you are ready."); return `Saved and confirmed Scout real-estate brief ${result.id}. Tell the user it is ready for property research.`;
+async function submitOutcome(parameters: OutcomeInput, onConfirmed: (message: string) => void) {
+  const pick = (...names: string[]) => {
+    for (const name of names) {
+      const value = String(parameters[name] ?? "").trim();
+      if (value) return value;
+    }
+    return "";
+  };
+  const number = (names: string[], fallback: number) => {
+    const candidate = names.map((name) => Number(parameters[name])).find(Number.isFinite);
+    return candidate ?? fallback;
+  };
+  const list = (...names: string[]) => {
+    for (const name of names) {
+      const value = parameters[name];
+      if (Array.isArray(value)) return value.map(String).map((item) => item.trim()).filter(Boolean);
+      if (typeof value === "string" && value.trim()) {
+        return value.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
+      }
+    }
+    return [];
+  };
+
+  const taskType = pick("task_type", "service_type", "deal_type") || "custom_outbound";
+  const area = pick("market", "area", "region", "search_area") || "Supplied contacts";
+  const city = pick("city") || "Remote";
+  const suppliedTargets = list("supplied_targets", "targets", "contacts");
+  const legacyScope = [pick("deal_type"), area === "Supplied contacts" ? "" : area, city === "Remote" ? "" : city]
+    .filter(Boolean)
+    .join(" in ");
+  const outcome = pick("outcome", "goal", "request", "desired_result") ||
+    (legacyScope ? `Find, contact, and negotiate with matching ${legacyScope}` : "");
+
+  if (!outcome || (area === "Supplied contacts" && !suppliedTargets.length)) {
+    return "Before I save this, tell me the outcome you want and either where I should find targets or which contacts I should call.";
+  }
+
+  const ideal = number(["budget_ideal", "ideal_budget", "target_budget"], 0);
+  const ceiling = number(["budget_ceiling", "hard_ceiling", "maximum_budget"], ideal);
+  if (ceiling > 0 && ideal > ceiling) {
+    return "Your target budget is above your hard ceiling. Please confirm the two limits before I save the outcome.";
+  }
+
+  const spec = {
+    vertical: "outbound",
+    task_type: taskType,
+    outcome,
+    location: { area, city, pincode: pick("pincode") || undefined },
+    supplied_targets: suppliedTargets,
+    budget: { ideal, ceiling, currency: pick("currency") || "INR" },
+    negotiation_posture: pick("negotiation_posture") || "balanced",
+    negotiation_authority: pick("negotiation_authority", "authority") || "negotiate",
+    questions_to_ask: list("questions_to_ask", "questions"),
+    deal_breakers: list("deal_breakers", "constraints", "hard_limits"),
+    deadline: pick("deadline", "timing"),
+    language_pref: pick("language_pref", "language") || "en",
+    // Compatibility fields for the current call engine while vertical adapters are generalized.
+    deal_type: pick("deal_type") || taskType,
+    occupancy: number(["occupancy"], 1),
+    furnishing: pick("furnishing") || "not_applicable",
+    amenities: list("amenities"),
+    move_in_date: pick("move_in_date", "start_date", "deadline"),
+    lease_duration_months: number(["lease_duration_months"], 0),
+  };
+
+  const created = await fetch("/api/orchestrator/requirements", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ spec, source_path: "elevenlabs_voice_outcome" }),
+  });
+  const record = await created.json();
+  if (!created.ok) return `I could not save the outcome: ${record.error ?? "unknown error"}`;
+
+  const confirmed = await fetch(`/api/orchestrator/requirements/${record.id}/confirm`, { method: "POST" });
+  const result = await confirmed.json();
+  if (!confirmed.ok) return `I could not confirm the outcome: ${result.error ?? "unknown error"}`;
+
+  localStorage.setItem("scout_requirement_id", result.id);
+  onConfirmed("Outcome confirmed. Continue to Targets when you are ready.");
+  return `Saved and confirmed outcome ${result.id}. Tell the user Scout is ready to find or call the right targets.`;
 }

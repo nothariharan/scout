@@ -1,8 +1,8 @@
 "use client";
 
 // Real map (Leaflet + OpenStreetMap tiles — no API key), tinted to the pearl/
-// indigo theme via CSS filter. Markers are liquid-glass price chips; the center
-// star is the user's target area. Loaded client-side only (leaflet needs window).
+// indigo theme via CSS filter. Markers map directly to the ranked result list;
+// pricing stays in result rows where its units and status are unambiguous.
 
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
@@ -15,12 +15,10 @@ export type MapSpot = {
 };
 
 const KORAMANGALA: MapSpot[] = [
-  { lat: 12.9352, lng: 77.6245, label: "You", kind: "target" },
-  { lat: 12.9382, lng: 77.6186, label: "Comfort Stay", kind: "place" },
-  { lat: 12.9331, lng: 77.63, label: "Zolo Nest", kind: "place" },
-  { lat: 12.9297, lng: 77.6221, label: "Sunrise PG", kind: "place" },
-  { lat: 12.9401, lng: 77.6282, label: "₹14.2k", kind: "place" },
-  { lat: 12.9315, lng: 77.6169, label: "₹15.5k", kind: "place" },
+  { lat: 12.9352, lng: 77.6245, label: "Search area", kind: "target" },
+  { lat: 12.9382, lng: 77.6186, label: "1", kind: "place" },
+  { lat: 12.9331, lng: 77.63, label: "2", kind: "place" },
+  { lat: 12.9297, lng: 77.6221, label: "3", kind: "place" },
 ];
 
 export function NeighborhoodMap({
@@ -54,6 +52,16 @@ export function NeighborhoodMap({
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
+      L.circle([target.lat, target.lng], {
+        radius: 900,
+        color: "#5e5ce6",
+        weight: 1.5,
+        dashArray: "6 7",
+        fillColor: "#5e5ce6",
+        fillOpacity: 0.06,
+        interactive: false,
+      }).addTo(map);
+
       spots.forEach((s, i) => {
         const cls = s.kind === "target" ? "lmk lmk-target" : "lmk";
         L.marker([s.lat, s.lng], {
@@ -73,5 +81,5 @@ export function NeighborhoodMap({
     };
   }, [spots]);
 
-  return <div ref={el} className={`map-tint ${className ?? ""}`} />;
+  return <div ref={el} role="img" aria-label="Example Koramangala search area with three ranked PG results" className={`map-tint ${className ?? ""}`} />;
 }

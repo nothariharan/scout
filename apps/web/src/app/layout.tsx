@@ -3,57 +3,23 @@ import "./globals.css";
 import { StageNav } from "@/components/StageNav";
 
 export const metadata: Metadata = {
-  title: "Scout — the Negotiator",
+  title: "Scout | Your Outbound Deal Agent",
   description:
-    "An autonomous buying agent that researches, negotiates, and learns from every deal.",
+    "Set the outcome once. Scout finds the right targets, calls and negotiates on your behalf, then returns the agreed terms with evidence.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-
-        {/* Floating liquid-glass menu capsule: brand row + stage tabs. */}
-        <div className="sticky top-3 z-40 px-3">
-          <div
-            className="lg-container mx-auto max-w-[996px]"
-            style={{
-              borderRadius: 9999,
-              boxShadow: "0 14px 44px rgba(24, 70, 110, 0.2)",
-            }}
-          >
-            <div className="lg-filter" />
-            <div className="lg-overlay" />
-            <div className="lg-specular" />
-            <div className="lg-content px-7">
-              <header>
-                <div className="flex items-baseline justify-between px-2 pb-1 pt-3">
-                  <a href="/" className="flex items-baseline gap-3">
-                    <span className="text-xl font-semibold tracking-tight text-ink">Scout</span>
-                    <span className="text-[11px] font-medium text-secondary">
-                      Case file · Negotiation
-                    </span>
-                  </a>
-                  <span className="hidden text-[11px] text-secondary sm:block">
-                    Moving pilot · AI buying agent
-                  </span>
-                </div>
-              </header>
-              <div className="px-1 pb-2">
-                <StageNav />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <main className="wrap py-10">{children}</main>
-
+        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <StageNav />
+        <main id="main-content" className="wrap py-10">{children}</main>
         <footer className="wrap pb-12 pt-4">
           <div className="wire mb-4" />
           <p className="text-[11px] leading-relaxed text-secondary">
-            Scout discloses it is an AI on every call and cannot pay, sign, or commit — terms are
-            subject to your confirmation. Built for the ElevenLabs × Hack-Nation Negotiator
-            challenge.
+            Scout identifies itself as AI on every call and cannot pay, sign, or make a binding
+            commitment without approval. Every agreed term keeps its source and transcript attached.
           </p>
         </footer>
       </body>
