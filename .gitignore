@@ -5,6 +5,7 @@ dist/
 .next/
 .next-*/
 coverage/
+__pycache__/
 output/
 
 # Environment and secrets

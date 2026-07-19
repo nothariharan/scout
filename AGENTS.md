@@ -20,4 +20,3 @@ Before changing the frontend, read [`DESIGN.md`](./DESIGN.md). It is the canonic
 ## Verification
 
 For frontend changes, run `pnpm --filter @scout/web build` and visually check the routes and viewport sizes listed in `DESIGN.md`.
-

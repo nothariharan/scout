@@ -218,4 +218,3 @@ Before completing a frontend change:
 - Does mobile preserve the same task order and meaning?
 - Are surfaces opaque enough to keep text readable?
 - Is the visual meaningful, licensed, generated for Scout, or original?
-
